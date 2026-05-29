@@ -766,7 +766,7 @@ async function doLogin() {
     } catch(supaErr) {
       console.warn('Supabase indisponível, usando fallback local:', supaErr);
       // fallback: admin padrão
-      if (u === 'admin' && p === 'admin123') {
+      if (u === 'admin' && p === '3x@to_2026') {
         rowsFinal = [{ nome: 'Administrador', login: 'admin', perfil: 'admin' }];
       }
     }
