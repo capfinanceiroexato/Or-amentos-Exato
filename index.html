@@ -281,12 +281,14 @@ tr:hover td{background:#FAFBFD;}
     <div class="menu-section">Orçamentos</div>
     <div class="menu-item" onclick="nav('orcamentos')"><span class="mi">📝</span> Lançar Orçamento</div>
     <div class="menu-item" onclick="nav('aguardando')"><span class="mi">⏳</span> Aguardando Cliente <span class="menu-badge" id="badge-aguardando">0</span></div>
+    <div class="menu-item" onclick="nav('diretor')"><span class="mi">🎯</span> Aguardando Diretor <span class="menu-badge" id="badge-diretor" style="display:none">0</span></div>
     <div class="menu-section">Projetos</div>
     <div class="menu-item" onclick="nav('instalacao')"><span class="mi">🏗️</span> Instalação</div>
     <div class="menu-item" onclick="nav('calendario')"><span class="mi">📅</span> Calendário</div>
     <div class="menu-item" onclick="nav('concluidos')"><span class="mi">✅</span> Concluídos</div>
     <div class="menu-item" onclick="nav('cobranca')"><span class="mi">💰</span> Cobrança <span class="menu-badge" id="badge-cobranca" style="display:none">0</span></div>
     <div class="menu-item" onclick="nav('reprovados')"><span class="mi">❌</span> Reprovados <span class="menu-badge red" id="badge-reprovados">0</span></div>
+    <div class="menu-item admin-only" onclick="nav('tecnicos')" id="menu-tecnicos" style="display:none;"><span class="mi">👷</span> Técnicos</div>
     <div class="menu-item admin-only" onclick="nav('admin')" id="menu-admin" style="display:none;"><span class="mi">⚙️</span> Administração</div>
     <div class="menu-item admin-only" onclick="nav('horario')" id="menu-horario" style="display:none;"><span class="mi">🕐</span> Horário de Trabalho</div>
   </div>
@@ -432,7 +434,7 @@ tr:hover td{background:#FAFBFD;}
         <label>Ano:</label>
         <select id="orc-filter-ano" onchange="renderOrcamentos()"></select>
         <label>Status:</label>
-        <select id="orc-filter-status" onchange="renderOrcamentos()"><option value="">Todos</option><option>Em andamento</option><option>Enviado ao cliente</option></select>
+        <select id="orc-filter-status" onchange="renderOrcamentos()"><option value="">Todos</option><option value="Não iniciado" selected>⚪ Não iniciado</option><option value="Em andamento">🔵 Em andamento</option><option value="Dúvidas">❓ Dúvidas</option><option value="Enviado ao cliente">📤 Enviado ao cliente</option></select>
       </div>
       <div class="table-wrap">
         <div class="table-header">
@@ -471,7 +473,46 @@ tr:hover td{background:#FAFBFD;}
       </div>
       <div class="table-wrap">
         <div class="table-header"><h3>🏗️ Projetos em Instalação</h3></div>
-        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Início</th><th>Previsão</th><th>Lead Time</th><th style="min-width:170px;">⏱ Cronômetro</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbl-instalacao"></tbody></table></div>
+        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Início</th><th>Previsão</th><th>Lead Time</th><th style="min-width:190px;">⏱ Cronômetro</th><th style="min-width:160px;">👷 Técnico</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbl-instalacao"></tbody></table></div>
+      </div>
+    </div>
+
+    
+    <!-- AGUARDANDO DIRETOR -->
+    <div class="screen" id="screen-diretor">
+      <div class="filters-bar">
+        <label>Cliente:</label>
+        <select id="dir-filter-cli" onchange="renderDiretor()"><option value="">Todos</option></select>
+        <label>Mês:</label>
+        <select id="dir-filter-mes" onchange="renderDiretor()"><option value="">Todos</option><option>Jan</option><option>Fev</option><option>Mar</option><option>Abr</option><option>Mai</option><option>Jun</option><option>Jul</option><option>Ago</option><option>Set</option><option>Out</option><option>Nov</option><option>Dez</option></select>
+        <label>Ano:</label>
+        <select id="dir-filter-ano" onchange="renderDiretor()"></select>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header"><h3>🎯 Aguardando Diretor</h3></div>
+        <div class="table-scroll"><table><thead><tr>
+          <th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Enviado em</th><th>Aguardando há</th><th>Status</th><th style="min-width:190px;">⏱ Cronômetro</th><th>Ações</th>
+        </tr></thead><tbody id="tbl-diretor"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- TÉCNICOS -->
+    <div class="screen" id="screen-tecnicos">
+      <div class="form-section" style="max-width:480px;">
+        <div class="form-section-title">👷 Cadastro de Técnico</div>
+        <div class="form-group"><label>Nome *</label><input type="text" id="tec-nome" placeholder="Nome do técnico"></div>
+        <div class="form-group"><label>Telefone</label><input type="text" id="tec-tel" placeholder="(47) 9 9999-9999"></div>
+        <div class="form-group"><label>Especialidade</label><input type="text" id="tec-esp" placeholder="Ex: Portões, Câmeras..."></div>
+        <div class="form-actions">
+          <button class="btn btn-secondary" onclick="clearTecnico()">Limpar</button>
+          <button class="btn btn-primary" onclick="salvarTecnico()">💾 Salvar Técnico</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header"><h3>👷 Técnicos Cadastrados</h3></div>
+        <div class="table-scroll"><table><thead><tr>
+          <th>Nome</th><th>Telefone</th><th>Especialidade</th><th>Ações</th>
+        </tr></thead><tbody id="tbl-tecnicos"></tbody></table></div>
       </div>
     </div>
 
@@ -528,6 +569,10 @@ tr:hover td{background:#FAFBFD;}
         </select>
         <select id="cal-filter-ano" onchange="renderCalendario()" style="border:1.5px solid var(--cinza-border);border-radius:7px;padding:6px 10px;font-size:13px;"></select>
         <button onclick="calNavMes(1)" style="background:#3CB54A;color:#fff;border:none;border-radius:7px;padding:6px 14px;font-size:18px;cursor:pointer;line-height:1;">&#8250;</button>
+        <label style="font-size:13px;color:var(--cinza-texto);">👷 Técnico:</label>
+        <select id="cal-filter-tec" onchange="renderCalendario()" style="border:1.5px solid var(--cinza-border);border-radius:7px;padding:6px 10px;font-size:13px;">
+          <option value="">Todos</option>
+        </select>
         <button onclick="calHoje()" style="background:#f0f4fa;color:var(--azul-escuro);border:1.5px solid var(--cinza-border);border-radius:7px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;">Hoje</button>
         <span id="cal-titulo" style="font-size:16px;font-weight:700;color:var(--azul-escuro);margin-left:4px;"></span>
         <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -706,7 +751,7 @@ tr:hover td{background:#FAFBFD;}
       <div class="form-group"><label>Valor Total (R$) *</label><input type="number" id="orc-valor" placeholder="0,00"></div>
       <div class="form-group"><label>Data de Entrada *</label><input type="date" id="orc-dt-entrada"></div>
       <div class="form-group"><label>Data de Conclusão</label><input type="date" id="orc-dt-conclusao"></div>
-      <div class="form-group"><label>Status *</label><select id="orc-status" style="width:100%;border:1.5px solid var(--cinza-border);border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;"><option>Em andamento</option><option>Enviado ao cliente</option></select></div>
+      <div class="form-group"><label>Status *</label><select id="orc-status" style="width:100%;border:1.5px solid var(--cinza-border);border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;"><option value="Não iniciado" selected>⚪ Não iniciado</option><option value="Em andamento">🔵 Em andamento</option><option value="Dúvidas">❓ Dúvidas</option><option value="Enviado ao cliente">📤 Enviado ao cliente</option></select></div>
     </div>
     <div class="form-group" style="margin-bottom:18px;"><label>Observações</label><textarea id="orc-obs" placeholder="Detalhes do orçamento..." style="width:100%;border:1.5px solid var(--cinza-border);border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;resize:vertical;min-height:70px;"></textarea></div>
     <div class="form-actions">
@@ -929,8 +974,8 @@ document.getElementById('login-pass').addEventListener('keydown', e => { if(e.ke
 const screenTitles = {
   dashboard:'Dashboard', produtos:'Cadastro de Produtos', subprodutos:'Cadastro de Subprodutos',
   clientes:'Cadastro de Clientes', motivos:'Motivos de Reprovação', orcamentos:'Lançamento de Orçamento',
-  aguardando:'Aguardando Cliente', instalacao:'Instalação', concluidos:'Projetos Concluídos',
-  cobranca:'Cobrança', reprovados:'Orçamentos Reprovados', calendario:'Calendário de Instalações', admin:'Administração do Sistema', horario:'Horário de Trabalho'
+  aguardando:'Aguardando Cliente', diretor:'Aguardando Diretor', instalacao:'Instalação', concluidos:'Projetos Concluídos',
+  cobranca:'Cobrança', reprovados:'Orçamentos Reprovados', calendario:'Calendário de Instalações', admin:'Administração do Sistema', horario:'Horário de Trabalho', tecnicos:'Cadastro de Técnicos'
 };
 const screenActions = {
   produtos: '<button class="btn btn-primary btn-sm" onclick="clearForm(\'prod\')">+ Novo Produto</button>',
@@ -950,8 +995,8 @@ function nav(screen) {
   const renders = {
     dashboard: renderDashboard, produtos: renderProdutos, subprodutos: () => { populateSubPai(); renderSubprodutos(); },
     clientes: renderClientes, motivos: renderMotivos, orcamentos: () => { populateOrcSelects(); renderOrcamentos(); },
-    aguardando: renderAguardando, instalacao: renderInstalacao, concluidos: renderConcluidos,
-    cobranca: renderCobranca, reprovados: renderReprovados, calendario: renderCalendario, admin: renderAdmin, horario: renderHorario
+    aguardando: renderAguardando, diretor: renderDiretor, instalacao: renderInstalacao, concluidos: renderConcluidos,
+    cobranca: renderCobranca, reprovados: renderReprovados, calendario: renderCalendario, admin: renderAdmin, horario: renderHorario, tecnicos: renderTecnicos
   };
   if (renders[screen]) renders[screen]();
 }
@@ -986,6 +1031,7 @@ function populateOrcSelects() {
 
 // ===== BADGES =====
 function updateBadges() {
+  updateBadgeDiretor();
   document.getElementById('badge-aguardando').textContent = db.orcamentos.filter(o => o.status === 'Enviado ao cliente' && !['Concluído','Reprovado'].includes(o.followup)).length;
   document.getElementById('badge-reprovados').textContent = db.orcamentos.filter(o => o.followup === 'Reprovado').length;
 }
@@ -1235,7 +1281,7 @@ function filterOrc(list, prefixo) {
 
 function renderOrcamentos() {
   const statusFilter = document.getElementById('orc-filter-status')?.value || '';
-  let list = db.orcamentos.filter(o => !['Concluído','Reprovado','Instalação'].includes(o.followup) && o.status !== 'Enviado ao cliente' && o.status !== 'Reprovado');
+  let list = db.orcamentos.filter(o => !['Concluído','Reprovado','Instalação'].includes(o.followup) && o.status !== 'Enviado ao cliente' && o.status !== 'Reprovado' && o.status !== 'Dúvidas');
   if (statusFilter) list = list.filter(o => o.status === statusFilter);
   list = filterOrc(list, 'orc');
   document.getElementById('tbl-orcamentos').innerHTML = list.length ? list.map(o => {
@@ -1245,12 +1291,21 @@ function renderOrcamentos() {
     const days = calcLeadTime(o.dtEntrada, o.dtConclusao);
     const ltB = ltBadge(days, semConclusao);
 
-    // STATUS — select inline para trocar direto na tabela
+    // STATUS — select inline
+    const stColors = {
+      'Não iniciado': ['#F1F5F9','#475569'],
+      'Em andamento': ['#EFF6FF','#1D4ED8'],
+      'Dúvidas': ['#FEF9C3','#854D0E'],
+      'Enviado ao cliente': ['#FEF3C7','#B45309'],
+      'Reprovado': ['#FEE2E2','#B91C1C']
+    };
+    const stCol = stColors[o.status] || stColors['Não iniciado'];
     const statusSelect = `<select onchange="mudarStatusOrc('${o.id}',this.value)"
       style="border:1.5px solid var(--cinza-border);border-radius:7px;padding:4px 8px;font-size:12px;font-weight:600;cursor:pointer;
-      background:${o.status==='Em andamento'?'#EFF6FF':o.status==='Enviado ao cliente'?'#FEF3C7':'#FEE2E2'};
-      color:${o.status==='Em andamento'?'#1D4ED8':o.status==='Enviado ao cliente'?'#B45309':'#B91C1C'};">
+      background:${stCol[0]};color:${stCol[1]};">
+      <option value="Não iniciado" ${o.status==='Não iniciado'||!o.status?'selected':''}>⚪ Não iniciado</option>
       <option value="Em andamento" ${o.status==='Em andamento'?'selected':''}>🔵 Em andamento</option>
+      <option value="Dúvidas" ${o.status==='Dúvidas'?'selected':''}>❓ Dúvidas</option>
       <option value="Enviado ao cliente" ${o.status==='Enviado ao cliente'?'selected':''}>📤 Enviado ao cliente</option>
       <option value="Reprovado" ${o.status==='Reprovado'?'selected':''}>❌ Reprovado</option>
     </select>`;
@@ -1390,6 +1445,14 @@ function renderInstalacao() {
       </div>
     </td>`;
 
+    const tec = db.tecnicos?.find(t => t.id === o.tecnicoId);
+    const tecCell = `<td style="min-width:160px;">
+      <select class="tec-select" onchange="salvarTecnicoInst('${o.id}',this.value)"
+        style="width:100%;border:1.5px solid var(--cinza-border);border-radius:7px;padding:4px 8px;font-size:12px;">
+        <option value="">👷 Técnico...</option>
+        ${(db.tecnicos||[]).map(t=>`<option value="${t.id}" ${o.tecnicoId===t.id?'selected':''}>${t.nome}</option>`).join('')}
+      </select>
+    </td>`;
     return `<tr>
       <td><strong>ORC-${String(o._num).padStart(3,'0')}</strong></td>
       <td>${cli?.nome||'-'}</td>
@@ -1399,6 +1462,7 @@ function renderInstalacao() {
       <td>${fmtDate(o.dtInstalacaoConclusao)||'<span style="color:#94a3b8;font-size:11px;">sem data</span>'}</td>
       <td>${ltBadge(days, semPrev)}</td>
       ${cronoCelula}
+      ${tecCell}
       <td><span class="badge badge-orange">Em andamento</span></td>
       <td class="td-actions">
         <button class="btn btn-success btn-sm" onclick="openInstModal('${o.id}')">✅ Concluir</button>
@@ -1481,6 +1545,7 @@ const TELAS_CONFIG = [
   {key:'motivos', label:'📋 Motivos Reprovação'},
   {key:'orcamentos', label:'📝 Lançar Orçamento'},
   {key:'aguardando', label:'⏳ Aguardando Cliente'},
+  {key:'diretor', label:'🎯 Aguardando Diretor'},
   {key:'instalacao', label:'🏗️ Instalação'},
   {key:'calendario', label:'📅 Calendário'},
   {key:'concluidos', label:'✅ Concluídos'},
@@ -1496,6 +1561,8 @@ function applyPerms() {
   const isAdmin = usuarioLogado?.perfil === 'admin';
   document.getElementById('menu-admin').style.display = isAdmin ? 'flex' : 'none';
   const mh = document.getElementById('menu-horario'); if(mh) mh.style.display = isAdmin ? 'flex' : 'none';
+  const mt = document.getElementById('menu-tecnicos'); if(mt) mt.style.display = isAdmin ? 'flex' : 'none';
+  updateBadgeDiretor();
   const perms = getPerms();
   document.querySelectorAll('.menu-item[onclick]').forEach(el => {
     const match = el.getAttribute('onclick').match(/nav\('(\w+)'\)/);
@@ -1767,7 +1834,14 @@ function renderCalendario() {
     if (!o.dtInstalacaoInicio) return false;
     const mesAnoInicio = o.dtInstalacaoInicio.slice(0,7);
     const mesAnoFim = o.dtInstalacaoConclusao ? o.dtInstalacaoConclusao.slice(0,7) : mesAnoInicio;
-    const alvo = `${calAno}-${String(calMes).padStart(2,'0')}`;
+    // Popular select de técnicos no calendário
+  const calTecSel = document.getElementById('cal-filter-tec');
+  if (calTecSel && db.tecnicos) {
+    const cur = calTecSel.value;
+    calTecSel.innerHTML = '<option value="">Todos</option>' + db.tecnicos.map(t=>`<option value="${t.id}" ${cur===t.id?'selected':''}>${t.nome}</option>`).join('');
+  }
+  const calFiltroTec = calTecSel?.value || '';
+  const alvo = `${calAno}-${String(calMes).padStart(2,'0')}`;
     return mesAnoInicio <= alvo && mesAnoFim >= alvo;
   });
 
@@ -2652,20 +2726,32 @@ async function mudarStatusOrc(id, novoStatus) {
   if (!o) return;
   if (novoStatus === 'Reprovado') {
     o.followup = 'Reprovado';
+    o.status = 'Reprovado';
     o.dtReprov = new Date().toISOString().slice(0,10);
+  } else if (novoStatus === 'Dúvidas') {
+    o.status = 'Dúvidas';
+    o.dtDuvida = new Date().toISOString().slice(0,10);
   } else {
     o.status = novoStatus;
     if (novoStatus === 'Enviado ao cliente') {
       o.dtEnvioCliente = new Date().toISOString().slice(0,10);
     }
+    if (novoStatus !== 'Dúvidas') {
+      o.dtDuvida = null;
+    }
   }
   await save();
   renderOrcamentos();
   renderAguardando();
+  renderDiretor();
   updateBadges();
+  updateBadgeDiretor();
   if (novoStatus === 'Enviado ao cliente') {
     toast('Movido para Aguardando Cliente!', 'success');
     setTimeout(() => nav('aguardando'), 800);
+  } else if (novoStatus === 'Dúvidas') {
+    toast('Movido para Aguardando Diretor!', 'success');
+    setTimeout(() => nav('diretor'), 800);
   } else if (novoStatus === 'Reprovado') {
     toast('Orçamento marcado como reprovado!', 'error');
   }
@@ -2747,6 +2833,184 @@ function abrirLogCrono(id) {
   document.getElementById('modal-log-crono').classList.add('open');
 }
 
+
+// ===== AGUARDANDO DIRETOR =====
+function updateBadgeDiretor() {
+  const list = db.orcamentos.filter(o => o.status === 'Dúvidas' && !['Concluído','Reprovado','Instalação'].includes(o.followup));
+  const b = document.getElementById('badge-diretor');
+  if (b) { b.textContent = list.length; b.style.display = list.length ? 'inline-flex' : 'none'; }
+}
+
+function renderDiretor() {
+  updateBadgeDiretor();
+  const cli = document.getElementById('dir-filter-cli')?.value || '';
+  const mes = document.getElementById('dir-filter-mes')?.value || '';
+  const ano = document.getElementById('dir-filter-ano')?.value || '';
+  let list = db.orcamentos.filter(o => o.status === 'Dúvidas' && !['Concluído','Reprovado','Instalação'].includes(o.followup));
+  if (cli) list = list.filter(o => o.clienteId === cli);
+  if (mes) list = list.filter(o => mesFromDate(o.dtDuvida || o.dtEntrada) === mes);
+  if (ano) list = list.filter(o => anoFromDate(o.dtDuvida || o.dtEntrada) === ano);
+
+  // popular selects
+  const cliSel = document.getElementById('dir-filter-cli');
+  if (cliSel && cliSel.options.length <= 1) {
+    db.clientes.forEach(c => { const op = new Option(c.nome, c.id); cliSel.add(op); });
+  }
+
+  document.getElementById('tbl-diretor').innerHTML = list.length ? list.map(o => {
+    const c = db.clientes.find(x => x.id === o.clienteId);
+    const p = db.produtos.find(x => x.id === o.produtoId);
+    const dias = calcLeadTime(o.dtDuvida || o.dtEntrada, null);
+    const agBadge = dias >= 5
+      ? `<span class="lt-badge lt-over" style="animation:pisca .8s infinite alternate;">🔴 ${dias}d</span>`
+      : `<span class="lt-badge lt-warn">⏳ ${dias}d</span>`;
+
+    // STATUS select com "Não iniciado"
+    const stColors = {'Não iniciado':['#F1F5F9','#475569'],'Em andamento':['#EFF6FF','#1D4ED8'],'Dúvidas':['#FEF9C3','#854D0E']};
+    const stCol = stColors[o.statusDir] || stColors['Não iniciado'];
+    const stSelect = `<select onchange="mudarStatusDir('${o.id}',this.value)"
+      style="border:1.5px solid var(--cinza-border);border-radius:7px;padding:4px 8px;font-size:12px;font-weight:600;cursor:pointer;background:${stCol[0]};color:${stCol[1]};">
+      <option value="Não iniciado" ${(o.statusDir||'Não iniciado')==='Não iniciado'?'selected':''}>⚪ Não iniciado</option>
+      <option value="Em andamento" ${o.statusDir==='Em andamento'?'selected':''}>🔵 Em andamento</option>
+    </select>`;
+
+    // CRONÔMETRO dir — usa campo cronoDir separado
+    const isPlaying = o.cronoDirAtivo;
+    const elapsed = cronoDirElapsed(o);
+    const temSessoes = (o.cronoDirSessoes && o.cronoDirSessoes.length > 0) || o.cronoDirAtivo;
+    const cronoCell = `<td style="min-width:190px;vertical-align:middle;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button onclick="togglePlayDir('${o.id}')"
+          style="width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;
+          background:${isPlaying?'#B91C1C':'#15803D'};color:#fff;flex-shrink:0;" title="${isPlaying?'Pausar':'Iniciar'}">
+          ${isPlaying?'⏸':'▶'}
+        </button>
+        <div id="crono-dir-${o.id}" style="font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;
+          color:${isPlaying?'#15803D':temSessoes?'#1B3A6B':'#94a3b8'};min-width:65px;">${elapsed}</div>
+        ${temSessoes?`<button onclick="abrirLogDir('${o.id}')" title="Ver sessões"
+          style="width:24px;height:24px;border-radius:6px;border:1px solid #CBD5E1;background:#F8FAFC;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;">📋</button>`:''}
+      </div>
+    </td>`;
+
+    return `<tr>
+      <td><strong>ORC-${String(o._num).padStart(3,'0')}</strong></td>
+      <td>${c?.nome||'-'}</td><td>${p?.nome||'-'}</td><td>${fmtVal(o.valor)}</td>
+      <td>${fmtDate(o.dtDuvida||o.dtEntrada)}</td>
+      <td>${agBadge}</td>
+      <td>${stSelect}</td>
+      ${cronoCell}
+      <td class="td-actions">
+        <button class="btn btn-primary btn-sm" onclick="responderDiretor('${o.id}')">✅ Respondido</button>
+        <button class="btn btn-secondary btn-sm" onclick="abrirEditarOrc('${o.id}')">✏️</button>
+        <button class="btn-bell btn-sm" onclick="abrirLembreteOrc('${o.id}')" title="Lembrete">🔔</button>
+      </td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="9"><div class="empty-state"><div class="ei">🎯</div><p>Nenhum orçamento aguardando diretor</p></div></td></tr>';
+}
+
+async function mudarStatusDir(id, novoStatus) {
+  const o = db.orcamentos.find(x => x.id === id);
+  if (!o) return;
+  o.statusDir = novoStatus;
+  await save();
+  renderDiretor();
+}
+
+async function responderDiretor(id) {
+  const o = db.orcamentos.find(x => x.id === id);
+  if (!o) return;
+  o.status = 'Em andamento';
+  o.statusDir = null;
+  o.dtDuvida = null;
+  await save();
+  renderDiretor();
+  renderOrcamentos();
+  updateBadges();
+  updateBadgeDiretor();
+  toast('Retornado para Orçamento!', 'success');
+  setTimeout(() => nav('orcamentos'), 800);
+}
+
+// Cronômetro separado para Diretor
+function cronoDirElapsed(o) {
+  let elapsed = o.cronoDirAcumulado || 0;
+  if (o.cronoDirAtivo && o.cronoDirInicio) elapsed += Date.now() - o.cronoDirInicio;
+  if (elapsed === 0) return '00:00:00';
+  const h = Math.floor(elapsed/3600000), m = Math.floor((elapsed%3600000)/60000), s = Math.floor((elapsed%60000)/1000);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+async function togglePlayDir(id) {
+  const o = db.orcamentos.find(x => x.id === id);
+  if (!o) return;
+  if (!o.cronoDirSessoes) o.cronoDirSessoes = [];
+  if (o.cronoDirAtivo) {
+    const durMs = Date.now() - o.cronoDirInicio;
+    o.cronoDirSessoes.push({ inicio: o.cronoDirInicio, fim: Date.now(), durMs });
+    o.cronoDirAcumulado = (o.cronoDirAcumulado || 0) + durMs;
+    o.cronoDirAtivo = false; o.cronoDirInicio = null;
+  } else {
+    o.cronoDirAtivo = true; o.cronoDirInicio = Date.now();
+  }
+  await save(); renderDiretor();
+  iniciarCronoTicker();
+}
+function abrirLogDir(id) {
+  const o = db.orcamentos.find(x => x.id === id);
+  if (!o) return;
+  const sessoes = o.cronoDirSessoes || [];
+  let rows = sessoes.length
+    ? sessoes.map((s,i) => `<tr><td style="padding:6px 10px;font-weight:700;">#${i+1}</td><td style="padding:6px 10px;">${fmtDataHora(s.inicio)}</td><td style="padding:6px 10px;">${fmtDataHora(s.fim)}</td><td style="padding:6px 10px;font-weight:700;color:#15803D;">${msToDuration(s.durMs)}</td></tr>`).join('')
+    : `<tr><td colspan="4" style="padding:16px;text-align:center;color:#94a3b8;">Nenhuma sessão</td></tr>`;
+  document.getElementById('log-crono-codigo').textContent = 'ORC-'+String(o._num).padStart(3,'0') + ' (Diretor)';
+  document.getElementById('log-crono-total').textContent = cronoDirElapsed(o);
+  document.getElementById('log-crono-rows').innerHTML = rows;
+  document.getElementById('modal-log-crono').classList.add('open');
+}
+
+// ===== TÉCNICOS =====
+function clearTecnico() {
+  ['tec-nome','tec-tel','tec-esp'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+}
+async function salvarTecnico() {
+  const nome = document.getElementById('tec-nome').value.trim();
+  if (!nome) return toast('Informe o nome do técnico', 'error');
+  if (!db.tecnicos) db.tecnicos = [];
+  db.tecnicos.push({ id: uid(), nome, tel: document.getElementById('tec-tel').value.trim(), esp: document.getElementById('tec-esp').value.trim() });
+  await save(); clearTecnico(); renderTecnicos(); toast('Técnico salvo!', 'success');
+}
+function renderTecnicos() {
+  if (!db.tecnicos) db.tecnicos = [];
+  const tbody = document.getElementById('tbl-tecnicos');
+  if (!tbody) return;
+  tbody.innerHTML = db.tecnicos.length ? db.tecnicos.map(t => `<tr>
+    <td><strong>${t.nome}</strong></td>
+    <td>${t.tel||'—'}</td>
+    <td>${t.esp||'—'}</td>
+    <td class="td-actions">
+      <button class="btn btn-danger btn-sm" onclick="delTecnico('${t.id}')">🗑</button>
+    </td>
+  </tr>`).join('') : '<tr><td colspan="4"><div class="empty-state"><div class="ei">👷</div><p>Nenhum técnico cadastrado</p></div></td></tr>';
+  populateTecSelects();
+}
+async function delTecnico(id) {
+  if (!confirm('Excluir técnico?')) return;
+  db.tecnicos = db.tecnicos.filter(t => t.id !== id);
+  await save(); renderTecnicos(); toast('Técnico excluído', 'error');
+}
+function populateTecSelects() {
+  if (!db.tecnicos) return;
+  document.querySelectorAll('.tec-select').forEach(sel => {
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Selecionar técnico</option>' + db.tecnicos.map(t => `<option value="${t.id}" ${cur===t.id?'selected':''}>${t.nome}</option>`).join('');
+  });
+}
+async function salvarTecnicoInst(orcId, tecId) {
+  const o = db.orcamentos.find(x => x.id === orcId);
+  if (!o) return;
+  o.tecnicoId = tecId;
+  await save(); renderInstalacao(); toast('Técnico atribuído!', 'success');
+}
+
 function abrirModalNovoOrc() {
   populateOrcSelects();
   clearOrc();
@@ -2811,6 +3075,10 @@ function iniciarCronoTicker() {
     db.orcamentos.filter(o => o.cronoPlayAtivo).forEach(o => {
       const el = document.getElementById('crono-cell-' + o.id);
       if (el) el.textContent = cronoElapsed(o);
+    });
+    db.orcamentos.filter(o => o.cronoDirAtivo).forEach(o => {
+      const el = document.getElementById('crono-dir-' + o.id);
+      if (el) el.textContent = cronoDirElapsed(o);
     });
   }, 1000);
 }
