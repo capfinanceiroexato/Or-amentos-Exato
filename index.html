@@ -284,6 +284,7 @@ tr:hover td{background:#FAFBFD;}
     <div class="menu-item" onclick="nav('diretor')"><span class="mi">🎯</span> Aguardando Diretor <span class="menu-badge" id="badge-diretor" style="display:none">0</span></div>
     <div class="menu-section">Projetos</div>
     <div class="menu-item" onclick="nav('instalacao')"><span class="mi">🏗️</span> Instalação</div>
+    <div class="menu-item" onclick="nav('interna')"><span class="mi">🔧</span> Atendimento Interno <span class="menu-badge" id="badge-interna" style="display:none">0</span></div>
     <div class="menu-item" onclick="nav('calendario')"><span class="mi">📅</span> Calendário</div>
     <div class="menu-item" onclick="nav('concluidos')"><span class="mi">✅</span> Concluídos</div>
     <div class="menu-item" onclick="nav('cobranca')"><span class="mi">💰</span> Cobrança <span class="menu-badge" id="badge-cobranca" style="display:none">0</span></div>
@@ -535,6 +536,36 @@ tr:hover td{background:#FAFBFD;}
       </div>
     </div>
 
+
+    <!-- ATENDIMENTO INTERNO -->
+    <div class="screen" id="screen-interna">
+      <div class="filters-bar" style="flex-wrap:wrap;gap:10px;">
+        <label>👷 Técnico:</label>
+        <select id="int-filter-tec" onchange="renderInterna()"><option value="">Todos</option></select>
+        <label>👥 Cliente:</label>
+        <select id="int-filter-cli" onchange="renderInterna()"><option value="">Todos</option></select>
+        <label>Status:</label>
+        <select id="int-filter-status" onchange="renderInterna()">
+          <option value="">Todos</option>
+          <option value="Não iniciado">⚪ Não iniciado</option>
+          <option value="Em andamento">🔵 Em andamento</option>
+          <option value="Concluído">✅ Concluído</option>
+        </select>
+        <label>Mês:</label>
+        <select id="int-filter-mes" onchange="renderInterna()"><option value="">Todos</option><option>Jan</option><option>Fev</option><option>Mar</option><option>Abr</option><option>Mai</option><option>Jun</option><option>Jul</option><option>Ago</option><option>Set</option><option>Out</option><option>Nov</option><option>Dez</option></select>
+        <label>Ano:</label>
+        <select id="int-filter-ano" onchange="renderInterna()"></select>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header"><h3>🔧 Atendimento Interno</h3></div>
+        <div class="table-scroll"><table><thead><tr>
+          <th>Código</th><th>Cliente</th><th>Produto/Serviço</th><th>Valor</th>
+          <th>Data Entrada</th><th>Lead Time</th><th>Status</th>
+          <th style="min-width:190px;">⏱ Cronômetro</th><th>👷 Técnico</th><th>Ações</th>
+        </tr></thead><tbody id="tbl-interna"></tbody></table></div>
+      </div>
+    </div>
+
     <!-- CONCLUÍDOS -->
     <div class="screen" id="screen-concluidos">
       <div class="filters-bar">
@@ -610,44 +641,71 @@ tr:hover td{background:#FAFBFD;}
 
     <!-- ADMINISTRAÇÃO -->
     <div class="screen" id="screen-admin">
-      <div style="padding:24px 28px;max-width:900px;">
+      <div style="padding:24px 28px;max-width:1100px;">
 
-        <!-- Usuários -->
-        <div class="form-section" style="margin-bottom:24px;">
-          <div class="form-section-title">👥 Usuários do Sistema</div>
-          <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr auto;">
-            <div class="form-group"><label>Nome</label><input type="text" id="adm-nome" placeholder="Nome completo"></div>
-            <div class="form-group"><label>Login</label><input type="text" id="adm-login" placeholder="ex: vendedor3"></div>
-            <div class="form-group"><label>Senha</label><input type="password" id="adm-senha" placeholder="Mínimo 6 caracteres"></div>
-            <div class="form-group"><label>Perfil</label>
-              <select id="adm-perfil" style="width:100%;border:1.5px solid var(--cinza-border);border-radius:9px;padding:11px 14px;font-size:14px;font-family:inherit;">
-        <option value="admin">Admin</option>
-        <option value="orcamentista">Orçamentista</option>
-        <option value="tecnico1">Técnico 1</option>
-        <option value="tecnico2">Técnico 2</option>
-        <option value="tecnico3">Técnico 3</option>
-        <option value="financeiro">Financeiro</option>
-        <option value="atendimento">Atendimento</option>
-      </select>
+        <!-- Abas admin -->
+        <div style="display:flex;gap:4px;margin-bottom:24px;border-bottom:2px solid var(--cinza-border);padding-bottom:0;">
+          <button class="adm-tab active" onclick="switchAdmTab('usuarios')" id="tab-usuarios"
+            style="padding:9px 20px;border:none;background:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;color:var(--azul-escuro);border-bottom:3px solid var(--azul-escuro);margin-bottom:-2px;">
+            👥 Usuários
+          </button>
+          <button class="adm-tab" onclick="switchAdmTab('permissoes')" id="tab-permissoes"
+            style="padding:9px 20px;border:none;background:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:var(--cinza-texto);border-bottom:3px solid transparent;margin-bottom:-2px;">
+            🔒 Permissões
+          </button>
+        </div>
+
+        <!-- ABA USUÁRIOS -->
+        <div id="adm-tab-usuarios">
+          <div class="form-section" style="margin-bottom:20px;">
+            <div class="form-section-title">➕ Novo Usuário</div>
+            <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+              <div class="form-group"><label>Nome *</label><input type="text" id="adm-nome" placeholder="Nome completo"></div>
+              <div class="form-group"><label>Login *</label><input type="text" id="adm-login" placeholder="ex: tecnico4"></div>
+              <div class="form-group"><label>Senha *</label>
+                <div style="position:relative;">
+                  <input type="password" id="adm-senha" placeholder="Mínimo 6 caracteres" style="width:100%;padding-right:36px;">
+                  <button type="button" onclick="toggleAdmSenha()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px;">👁</button>
+                </div>
+              </div>
+              <div class="form-group"><label>Perfil *</label>
+                <select id="adm-perfil" style="width:100%;border:1.5px solid var(--cinza-border);border-radius:9px;padding:11px 14px;font-size:14px;font-family:inherit;">
+                  <option value="admin">👑 Admin</option>
+                  <option value="orcamentista">📝 Orçamentista</option>
+                  <option value="tecnico1">👷 Técnico 1</option>
+                  <option value="tecnico2">👷 Técnico 2</option>
+                  <option value="tecnico3">👷 Técnico 3</option>
+                  <option value="financeiro">💰 Financeiro</option>
+                  <option value="atendimento">📞 Atendimento</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-secondary" onclick="clearAdmForm()">Limpar</button>
+              <button class="btn btn-primary" onclick="salvarUsuario()">💾 Salvar Usuário</button>
             </div>
           </div>
-          <div class="form-actions">
-            <button class="btn btn-secondary" onclick="clearAdmForm()">Limpar</button>
-            <button class="btn btn-primary" onclick="salvarUsuario()">💾 Salvar Usuário</button>
-          </div>
-          <div class="table-scroll" style="margin-top:16px;">
-            <table><thead><tr><th>Nome</th><th>Login</th><th>Perfil</th><th>Ações</th></tr></thead>
-            <tbody id="tbl-usuarios"></tbody></table>
+
+          <!-- Tabela usuários com senha inline -->
+          <div class="table-scroll">
+            <table>
+              <thead><tr>
+                <th>Nome</th><th>Login</th><th>Perfil</th><th style="min-width:220px;">🔑 Alterar Senha</th><th>Ações</th>
+              </tr></thead>
+              <tbody id="tbl-usuarios"></tbody>
+            </table>
           </div>
         </div>
 
-        <!-- Permissões de Telas -->
-        <div class="form-section">
-          <div class="form-section-title">🔒 Permissões de Telas por Perfil</div>
-          <p style="font-size:13px;color:var(--cinza-texto);margin-bottom:16px;">Admin sempre tem acesso total. Configure o que os <strong>Vendedores</strong> podem ver:</p>
-          <div id="permissoes-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px;"></div>
-          <div class="form-actions">
-            <button class="btn btn-primary" onclick="salvarPermissoes()">💾 Salvar Permissões</button>
+        <!-- ABA PERMISSÕES -->
+        <div id="adm-tab-permissoes" style="display:none;">
+          <div class="form-section">
+            <div class="form-section-title">🔒 Permissões por Tipo de Usuário</div>
+            <p style="font-size:13px;color:var(--cinza-texto);margin-bottom:20px;">Admin sempre tem acesso total. Marque quais telas cada perfil pode acessar:</p>
+            <div id="permissoes-grid" style="overflow-x:auto;"></div>
+            <div class="form-actions" style="margin-top:16px;">
+              <button class="btn btn-primary" onclick="salvarPermissoes()">💾 Salvar Permissões</button>
+            </div>
           </div>
         </div>
 
@@ -1007,7 +1065,7 @@ document.getElementById('login-pass').addEventListener('keydown', e => { if(e.ke
 const screenTitles = {
   dashboard:'Dashboard', produtos:'Cadastro de Produtos/Serviços', subprodutos:'Cadastro de Subprodutos/Serviços',
   clientes:'Cadastro de Clientes', motivos:'Motivos de Reprovação', orcamentos:'Lançamento de Orçamento',
-  aguardando:'Aguardando Cliente', diretor:'Aguardando Diretor', instalacao:'Instalação', concluidos:'Projetos Concluídos',
+  aguardando:'Aguardando Cliente', diretor:'Aguardando Diretor', instalacao:'Instalação', interna:'Atendimento Interno', concluidos:'Projetos Concluídos',
   cobranca:'Cobrança', reprovados:'Orçamentos Reprovados', calendario:'Calendário de Instalações', admin:'Administração do Sistema', horario:'Horário de Trabalho', tecnicos:'Cadastro de Técnicos'
 };
 const screenActions = {
@@ -1028,7 +1086,7 @@ function nav(screen) {
   const renders = {
     dashboard: renderDashboard, produtos: renderProdutos, subprodutos: () => { populateSubPai(); renderSubprodutos(); },
     clientes: renderClientes, motivos: renderMotivos, orcamentos: () => { populateOrcSelects(); renderOrcamentos(); },
-    aguardando: renderAguardando, diretor: renderDiretor, instalacao: renderInstalacao, concluidos: renderConcluidos,
+    aguardando: renderAguardando, diretor: renderDiretor, instalacao: renderInstalacao, interna: renderInterna, concluidos: renderConcluidos,
     cobranca: renderCobranca, reprovados: renderReprovados, calendario: renderCalendario, admin: renderAdmin, horario: renderHorario, tecnicos: renderTecnicos
   };
   if (renders[screen]) renders[screen]();
@@ -1038,12 +1096,12 @@ function nav(screen) {
 function populateSelects() {
   // ano selects
   const anos = [2023,2024,2025,2026,2027];
-  ['dash-filter-ano','orc-filter-ano','ag-filter-ano','inst-filter-ano','con-filter-ano','cobr-filter-ano','rep-filter-ano','dir-filter-ano'].forEach(id => {
+  ['dash-filter-ano','orc-filter-ano','ag-filter-ano','inst-filter-ano','int-filter-ano','con-filter-ano','cobr-filter-ano','rep-filter-ano','dir-filter-ano'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.innerHTML = '<option value="">Todos</option>' + anos.map(a => `<option>${a}</option>`).join('');
   });
-  ['dash-filter-cliente','orc-filter-cli','ag-filter-cli','inst-filter-cli','con-filter-cli','cobr-filter-cli','rep-filter-cli'].forEach(id => {
+  ['dash-filter-cliente','orc-filter-cli','ag-filter-cli','inst-filter-cli','int-filter-cli','con-filter-cli','cobr-filter-cli','rep-filter-cli'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.innerHTML = '<option value="">Todos</option>' + db.clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
@@ -1065,6 +1123,7 @@ function populateOrcSelects() {
 // ===== BADGES =====
 function updateBadges() {
   updateBadgeDiretor();
+  updateBadgeInterna();
   document.getElementById('badge-aguardando').textContent = db.orcamentos.filter(o => o.status === 'Enviado ao cliente' && !['Concluído','Reprovado'].includes(o.followup)).length;
   document.getElementById('badge-reprovados').textContent = db.orcamentos.filter(o => o.followup === 'Reprovado').length;
 }
@@ -1472,7 +1531,7 @@ function renderInstalacao() {
     prodSel.innerHTML = '<option value="">Todos</option>' + db.produtos.map(p=>`<option value="${p.id}" ${cur===p.id?'selected':''}>${p.nome}</option>`).join('');
   }
 
-  let list = db.orcamentos.filter(o => o.followup === 'Concluído' && o.statusInstalacao !== 'Concluído');
+  let list = db.orcamentos.filter(o => o.followup === 'Concluído' && o.statusInstalacao !== 'Concluído' && o.statusInterno !== 'ativo');
 
   // Filtro técnico
   const filtTec = document.getElementById('inst-filter-tec')?.value || '';
@@ -1553,6 +1612,7 @@ function renderInstalacao() {
       <td><span class="badge badge-orange">Em andamento</span></td>
       <td class="td-actions">
         <button class="btn btn-success btn-sm" onclick="openInstModal('${o.id}')">✅ Concluir</button>
+        <button class="btn btn-sm" style="background:#7C3AED22;color:#7C3AED;border:1px solid #7C3AED55;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;font-weight:600;" onclick="enviarParaInterno('${o.id}')">🔧 Interno</button>
         <button class="btn btn-secondary btn-sm" onclick="abrirEditarOrc('${o.id}')">✏️</button>
         <button class="btn btn-sm" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" onclick="abrirReverter('${o.id}','instalacao')">↩️</button>
         <button class="btn-bell btn-sm" onclick="abrirLembreteOrc('${o.id}')" title="Criar lembrete">🔔</button>
@@ -1634,6 +1694,7 @@ const TELAS_CONFIG = [
   {key:'aguardando', label:'⏳ Aguardando Cliente'},
   {key:'diretor', label:'🎯 Aguardando Diretor'},
   {key:'instalacao', label:'🏗️ Instalação'},
+  {key:'interna', label:'🔧 Atendimento Interno'},
   {key:'calendario', label:'📅 Calendário'},
   {key:'concluidos', label:'✅ Concluídos'},
   {key:'cobranca', label:'💰 Cobrança'},
@@ -1642,9 +1703,9 @@ const TELAS_CONFIG = [
 const PERFIL_PERMS = {
   admin: null, // tudo
   orcamentista: ['dashboard','orcamentos','aguardando','diretor','calendario'],
-  tecnico1: ['dashboard','instalacao','calendario'],
-  tecnico2: ['dashboard','instalacao','calendario'],
-  tecnico3: ['dashboard','instalacao','calendario'],
+  tecnico1: ['dashboard','instalacao','interna','calendario'],
+  tecnico2: ['dashboard','instalacao','interna','calendario'],
+  tecnico3: ['dashboard','instalacao','interna','calendario'],
   financeiro: ['dashboard','concluidos','cobranca','reprovados'],
   atendimento: ['dashboard','orcamentos','aguardando','clientes'],
 };
@@ -1684,16 +1745,27 @@ async function renderAdmUsuarios() {
   const rows = await supaGet('usuarios', 'order=nome.asc');
   const tbody = document.getElementById('tbl-usuarios');
   if (!tbody) return;
-  tbody.innerHTML = rows.map(u => `
-    <tr>
+  const perfilLabels = {admin:'👑 Admin',orcamentista:'📝 Orçamentista',tecnico1:'👷 Técnico 1',tecnico2:'👷 Técnico 2',tecnico3:'👷 Técnico 3',financeiro:'💰 Financeiro',atendimento:'📞 Atendimento'};
+  const perfilCores = {admin:['#EFF6FF','#1D4ED8'],orcamentista:['#F0FDF4','#15803D'],tecnico1:['#FEF9C3','#854D0E'],tecnico2:['#FEF9C3','#854D0E'],tecnico3:['#FEF9C3','#854D0E'],financeiro:['#FEF3C7','#B45309'],atendimento:['#F5F3FF','#6D28D9']};
+  tbody.innerHTML = rows.map(u => {
+    const cor = perfilCores[u.perfil] || ['#F1F5F9','#475569'];
+    const inputId = 'senha-input-'+u.id;
+    return `<tr>
       <td><strong>${u.nome}</strong></td>
-      <td>${u.login}</td>
-      <td><span style="background:${u.perfil==='admin'?'#1E90FF22':u.perfil==='financeiro'?'#f59e0b22':'#22c55e22'};color:${u.perfil==='admin'?'#1E90FF':u.perfil==='financeiro'?'#b45309':'#16a34a'};border-radius:5px;padding:2px 10px;font-size:12px;font-weight:600;">${({admin:'Admin',orcamentista:'Orçamentista',tecnico1:'Técnico 1',tecnico2:'Técnico 2',tecnico3:'Técnico 3',financeiro:'Financeiro',atendimento:'Atendimento'}[u.perfil]||u.perfil)}</span></td>
-      <td style="display:flex;gap:6px;">
+      <td style="font-family:monospace;font-size:13px;">${u.login}</td>
+      <td><span style="background:${cor[0]};color:${cor[1]};border-radius:6px;padding:3px 10px;font-size:12px;font-weight:700;">${perfilLabels[u.perfil]||u.perfil}</span></td>
+      <td>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="password" id="${inputId}" placeholder="Nova senha..." style="border:1.5px solid var(--cinza-border);border-radius:7px;padding:5px 8px;font-size:12px;width:130px;">
+          <button class="btn btn-sm" style="background:#1B3A6B;color:#fff;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;" onclick="alterarSenhaUsuario('${u.id}','${inputId}')">🔑 Salvar</button>
+        </div>
+      </td>
+      <td class="td-actions">
         <button class="btn btn-secondary btn-sm" onclick="editarUsuario('${u.id}','${u.nome}','${u.login}','${u.perfil}')">✏️ Editar</button>
         ${u.login!=='admin'?`<button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:none;cursor:pointer;border-radius:6px;padding:4px 10px;" onclick="delUsuario('${u.id}')">🗑️</button>`:''}
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }
 
 function editarUsuario(id, nome, login, perfil) {
@@ -1745,7 +1817,7 @@ async function delUsuario(id) {
 }
 
 // ===== ADMIN: PERMISSÕES =====
-function renderPermissoesGrid() {
+// placeholder_perms() {
   const perms = getPerms();
   const grid = document.getElementById('permissoes-grid');
   if (!grid) return;
@@ -1756,7 +1828,7 @@ function renderPermissoesGrid() {
     </label>`).join('');
 }
 
-function salvarPermissoes() {
+// placeholder_salvar() {
   const checks = document.querySelectorAll('#permissoes-grid input[type=checkbox]:checked');
   const perms = Array.from(checks).map(c => c.value);
   localStorage.setItem('perms_vendedor', JSON.stringify(perms));
@@ -3180,6 +3252,259 @@ function atualizarInfoLogado() {
   registrarUltimoAcesso();
 }
 
+
+// ===== ATENDIMENTO INTERNO =====
+function updateBadgeInterna() {
+  const list = db.orcamentos.filter(o => o.statusInterno === 'ativo' && o.statusInternoDetalhe !== 'Concluído');
+  const b = document.getElementById('badge-interna');
+  if (b) { b.textContent = list.length; b.style.display = list.length ? 'inline-flex' : 'none'; }
+}
+
+async function enviarParaInterno(id) {
+  const o = db.orcamentos.find(x => x.id === id);
+  if (!o) return;
+  o.statusInterno = 'ativo';
+  o.statusInternoDetalhe = 'Não iniciado';
+  o.dtEntradaInterno = new Date().toISOString().slice(0,10);
+  o.cronoInternoAtivo = false;
+  o.cronoInternoAcumulado = 0;
+  o.cronoInternoInicio = null;
+  o.cronoInternoSessoes = [];
+  await save();
+  renderInstalacao();
+  renderInterna();
+  updateBadges();
+  updateBadgeInterna();
+  toast('Enviado para Atendimento Interno!', 'success');
+  setTimeout(() => nav('interna'), 800);
+}
+
+function cronoInternoElapsed(o) {
+  let elapsed = o.cronoInternoAcumulado || 0;
+  if (o.cronoInternoAtivo && o.cronoInternoInicio) elapsed += Date.now() - o.cronoInternoInicio;
+  if (elapsed === 0) return '00:00:00';
+  const h = Math.floor(elapsed/3600000), m = Math.floor((elapsed%3600000)/60000), s = Math.floor((elapsed%60000)/1000);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+async function togglePlayInterno(id) {
+  const o = db.orcamentos.find(x => x.id === id);
+  if (!o) return;
+  if (!o.cronoInternoSessoes) o.cronoInternoSessoes = [];
+  if (o.cronoInternoAtivo) {
+    const durMs = Date.now() - o.cronoInternoInicio;
+    o.cronoInternoSessoes.push({ inicio: o.cronoInternoInicio, fim: Date.now(), durMs });
+    o.cronoInternoAcumulado = (o.cronoInternoAcumulado || 0) + durMs;
+    o.cronoInternoAtivo = false; o.cronoInternoInicio = null;
+  } else {
+    o.cronoInternoAtivo = true; o.cronoInternoInicio = Date.now();
+    if (o.statusInternoDetalhe === 'Não iniciado') {
+      o.statusInternoDetalhe = 'Em andamento';
+    }
+  }
+  await save(); renderInterna();
+  iniciarCronoTicker();
+}
+
+async function mudarStatusInterno(id, novoStatus) {
+  const o = db.orcamentos.find(x => x.id === id);
+  if (!o) return;
+  o.statusInternoDetalhe = novoStatus;
+  if (novoStatus === 'Concluído') {
+    // Para cronômetro se estiver rodando
+    if (o.cronoInternoAtivo) {
+      const durMs = Date.now() - o.cronoInternoInicio;
+      if (!o.cronoInternoSessoes) o.cronoInternoSessoes = [];
+      o.cronoInternoSessoes.push({ inicio: o.cronoInternoInicio, fim: Date.now(), durMs });
+      o.cronoInternoAcumulado = (o.cronoInternoAcumulado || 0) + durMs;
+      o.cronoInternoAtivo = false; o.cronoInternoInicio = null;
+    }
+    o.statusInterno = 'concluido';
+    o.dtConclusaoInterno = new Date().toISOString().slice(0,10);
+    await save();
+    renderInterna();
+    renderInstalacao();
+    updateBadges();
+    updateBadgeInterna();
+    toast('Concluído! Retornado para Instalação ✅', 'success');
+    setTimeout(() => nav('instalacao'), 800);
+    return;
+  }
+  await save(); renderInterna();
+}
+
+function renderInterna() {
+  updateBadgeInterna();
+  // popular selects
+  const tecSel = document.getElementById('int-filter-tec');
+  if (tecSel && db.tecnicos) {
+    const cur = tecSel.value;
+    tecSel.innerHTML = '<option value="">Todos</option>' + db.tecnicos.map(t=>`<option value="${t.id}" ${cur===t.id?'selected':''}>${t.nome}</option>`).join('');
+  }
+  const filtTec  = document.getElementById('int-filter-tec')?.value || '';
+  const filtCli  = document.getElementById('int-filter-cli')?.value || '';
+  const filtSt   = document.getElementById('int-filter-status')?.value || '';
+  const filtMes  = document.getElementById('int-filter-mes')?.value || '';
+  const filtAno  = document.getElementById('int-filter-ano')?.value || '';
+
+  let list = db.orcamentos.filter(o => o.statusInterno === 'ativo');
+  if (filtTec)  list = list.filter(o => o.tecnicoId === filtTec);
+  if (filtCli)  list = list.filter(o => o.clienteId === filtCli);
+  if (filtSt)   list = list.filter(o => o.statusInternoDetalhe === filtSt);
+  if (filtMes)  list = list.filter(o => mesFromDate(o.dtEntradaInterno) === filtMes);
+  if (filtAno)  list = list.filter(o => anoFromDate(o.dtEntradaInterno) === filtAno);
+
+  const tbody = document.getElementById('tbl-interna');
+  if (!tbody) return;
+
+  tbody.innerHTML = list.length ? list.map(o => {
+    const cli  = db.clientes.find(c => c.id === o.clienteId);
+    const prod = db.produtos.find(p => p.id === o.produtoId);
+    const tec  = db.tecnicos?.find(t => t.id === o.tecnicoId);
+    const days = calcLeadTime(o.dtEntradaInterno, null);
+
+    // lead time badge
+    const ltB = days >= 10
+      ? `<span class="lt-badge lt-over">🔴 ${days}d parado</span>`
+      : days >= 5
+        ? `<span class="lt-badge lt-warn">⏳ ${days}d</span>`
+        : `<span class="lt-badge lt-ok">🟢 ${days}d</span>`;
+
+    // status select
+    const stColors = {'Não iniciado':['#F1F5F9','#475569'],'Em andamento':['#EFF6FF','#1D4ED8'],'Concluído':['#F0FDF4','#15803D']};
+    const stCol = stColors[o.statusInternoDetalhe] || stColors['Não iniciado'];
+    const stSelect = `<select onchange="mudarStatusInterno('${o.id}',this.value)"
+      style="border:1.5px solid var(--cinza-border);border-radius:7px;padding:4px 8px;font-size:12px;font-weight:600;cursor:pointer;background:${stCol[0]};color:${stCol[1]};">
+      <option value="Não iniciado" ${o.statusInternoDetalhe==='Não iniciado'?'selected':''}>⚪ Não iniciado</option>
+      <option value="Em andamento" ${o.statusInternoDetalhe==='Em andamento'?'selected':''}>🔵 Em andamento</option>
+      <option value="Concluído" ${o.statusInternoDetalhe==='Concluído'?'selected':''}>✅ Concluído</option>
+    </select>`;
+
+    // cronômetro
+    const isPlaying = o.cronoInternoAtivo;
+    const elapsed = cronoInternoElapsed(o);
+    const temSessoes = (o.cronoInternoSessoes && o.cronoInternoSessoes.length > 0) || o.cronoInternoAtivo;
+    const cronoCell = `<td style="min-width:190px;vertical-align:middle;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button onclick="togglePlayInterno('${o.id}')"
+          style="width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;
+          background:${isPlaying?'#B91C1C':'#15803D'};color:#fff;flex-shrink:0;" title="${isPlaying?'Pausar':'Iniciar'}">
+          ${isPlaying?'⏸':'▶'}
+        </button>
+        <div id="crono-int-${o.id}" style="font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;
+          color:${isPlaying?'#15803D':temSessoes?'#1B3A6B':'#94a3b8'};min-width:65px;">${elapsed}</div>
+        ${temSessoes?`<button onclick="abrirLogInterno('${o.id}')" title="Ver sessões"
+          style="width:24px;height:24px;border-radius:6px;border:1px solid #CBD5E1;background:#F8FAFC;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;">📋</button>`:''}
+      </div>
+    </td>`;
+
+    const trStyle = days >= 10 ? ' style="background:#fff5f5;"' : '';
+    return `<tr${trStyle}>
+      <td><strong>ORC-${String(o._num).padStart(3,'0')}</strong></td>
+      <td>${cli?.nome||'-'}</td><td>${prod?.nome||'-'}</td><td>${fmtVal(o.valor)}</td>
+      <td>${fmtDate(o.dtEntradaInterno)}</td>
+      <td>${ltB}</td>
+      <td>${stSelect}</td>
+      ${cronoCell}
+      <td style="font-size:12px;color:var(--cinza-texto);">${tec?.nome||'<span style="color:#cbd5e1;">—</span>'}</td>
+      <td class="td-actions">
+        <button class="btn btn-secondary btn-sm" onclick="abrirEditarOrc('${o.id}')">✏️</button>
+        <button class="btn-bell btn-sm" onclick="abrirLembreteOrc('${o.id}')" title="Lembrete">🔔</button>
+      </td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="10"><div class="empty-state"><div class="ei">🔧</div><p>Nenhum item em atendimento interno</p></div></td></tr>';
+}
+
+function abrirLogInterno(id) {
+  const o = db.orcamentos.find(x => x.id === id);
+  if (!o) return;
+  const sessoes = o.cronoInternoSessoes || [];
+  let rows = sessoes.length
+    ? sessoes.map((s,i) => `<tr><td style="padding:6px 10px;font-weight:700;">#${i+1}</td><td style="padding:6px 10px;">${fmtDataHora(s.inicio)}</td><td style="padding:6px 10px;">${fmtDataHora(s.fim)}</td><td style="padding:6px 10px;font-weight:700;color:#15803D;">${msToDuration(s.durMs)}</td></tr>`).join('')
+    : `<tr><td colspan="4" style="padding:16px;text-align:center;color:#94a3b8;">Nenhuma sessão</td></tr>`;
+  document.getElementById('log-crono-codigo').textContent = 'ORC-'+String(o._num).padStart(3,'0') + ' (Interno)';
+  document.getElementById('log-crono-total').textContent = cronoInternoElapsed(o);
+  document.getElementById('log-crono-rows').innerHTML = rows;
+  document.getElementById('modal-log-crono').classList.add('open');
+}
+
+
+function switchAdmTab(tab) {
+  document.getElementById('adm-tab-usuarios').style.display = tab==='usuarios' ? 'block' : 'none';
+  document.getElementById('adm-tab-permissoes').style.display = tab==='permissoes' ? 'block' : 'none';
+  document.querySelectorAll('.adm-tab').forEach(b => {
+    const isActive = b.id === 'tab-'+tab;
+    b.style.color = isActive ? 'var(--azul-escuro)' : 'var(--cinza-texto)';
+    b.style.fontWeight = isActive ? '700' : '600';
+    b.style.borderBottomColor = isActive ? 'var(--azul-escuro)' : 'transparent';
+  });
+  if (tab === 'permissoes') renderPermissoesGrid();
+  if (tab === 'usuarios') renderAdmUsuarios();
+}
+
+function toggleAdmSenha() {
+  const inp = document.getElementById('adm-senha');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+async function alterarSenhaUsuario(id, inputId) {
+  const novaSenha = document.getElementById(inputId).value.trim();
+  if (!novaSenha || novaSenha.length < 3) return toast('Senha muito curta', 'error');
+  await fetch(`${SUPA_URL}/rest/v1/usuarios?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY },
+    body: JSON.stringify({ senha: novaSenha })
+  });
+  document.getElementById(inputId).value = '';
+  toast('Senha alterada!', 'success');
+}
+
+function renderPermissoesGrid() {
+  const grid = document.getElementById('permissoes-grid');
+  if (!grid) return;
+  const perfis = ['orcamentista','tecnico1','tecnico2','tecnico3','financeiro','atendimento'];
+  const perfilLabels = {orcamentista:'📝 Orçamentista',tecnico1:'👷 Técnico 1',tecnico2:'👷 Técnico 2',tecnico3:'👷 Técnico 3',financeiro:'💰 Financeiro',atendimento:'📞 Atendimento'};
+  const telas = TELAS_CONFIG;
+
+  const saved = JSON.parse(localStorage.getItem('perms_por_perfil') || 'null') || {};
+
+  grid.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <thead>
+      <tr style="background:#F8FAFC;">
+        <th style="padding:10px 14px;text-align:left;border-bottom:2px solid var(--cinza-border);color:var(--cinza-texto);">Tela</th>
+        ${perfis.map(p=>`<th style="padding:10px 8px;text-align:center;border-bottom:2px solid var(--cinza-border);color:var(--azul-escuro);font-size:11px;">${perfilLabels[p]}</th>`).join('')}
+      </tr>
+    </thead>
+    <tbody>
+      ${telas.map((t,i) => `<tr style="background:${i%2?'#F8FAFC':'#fff'};">
+        <td style="padding:8px 14px;font-weight:600;color:var(--texto);">${t.label}</td>
+        ${perfis.map(p => {
+          const permsP = saved[p] || PERFIL_PERMS[p] || [];
+          const checked = permsP.includes(t.key);
+          return `<td style="text-align:center;padding:8px;">
+            <input type="checkbox" data-perfil="${p}" data-tela="${t.key}" ${checked?'checked':''}
+              style="width:16px;height:16px;cursor:pointer;accent-color:var(--azul-escuro);">
+          </td>`;
+        }).join('')}
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function salvarPermissoes() {
+  const perfis = ['orcamentista','tecnico1','tecnico2','tecnico3','financeiro','atendimento'];
+  const result = {};
+  perfis.forEach(p => result[p] = []);
+  document.querySelectorAll('#permissoes-grid input[type=checkbox]:checked').forEach(cb => {
+    result[cb.dataset.perfil].push(cb.dataset.tela);
+  });
+  // Atualizar PERFIL_PERMS em runtime
+  Object.keys(result).forEach(p => PERFIL_PERMS[p] = result[p]);
+  localStorage.setItem('perms_por_perfil', JSON.stringify(result));
+  applyPerms();
+  toast('Permissões salvas!', 'success');
+}
+
 function abrirModalNovoOrc() {
   populateOrcSelects();
   clearOrc();
@@ -3248,6 +3573,10 @@ function iniciarCronoTicker() {
     db.orcamentos.filter(o => o.cronoDirAtivo).forEach(o => {
       const el = document.getElementById('crono-dir-' + o.id);
       if (el) el.textContent = cronoDirElapsed(o);
+    });
+    db.orcamentos.filter(o => o.cronoInternoAtivo).forEach(o => {
+      const el = document.getElementById('crono-int-' + o.id);
+      if (el) el.textContent = cronoInternoElapsed(o);
     });
   }, 1000);
 }
