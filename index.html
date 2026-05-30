@@ -385,6 +385,19 @@ tr:hover td{background:#FAFBFD;}
         <div id="dash-aprov-status" style="margin-top:10px;text-align:center;"></div>
       </div>
 
+      <!-- GRÁFICO MOTIVOS REPROVAÇÃO -->
+      <div style="background:#fff;border:1px solid var(--cinza-border);border-radius:14px;padding:20px 24px;margin:0 0 20px;">
+        <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;color:var(--azul-escuro);margin-bottom:18px;">❌ Motivos de Reprovação</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center;">
+          <div id="dash-motivos-bars" style="min-height:80px;"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+            <svg id="dash-motivos-donut" width="180" height="180" viewBox="0 0 180 180" style="overflow:visible;"></svg>
+            <div id="dash-motivos-legend" style="display:flex;flex-direction:column;gap:4px;font-size:11px;width:100%;"></div>
+          </div>
+        </div>
+        <div id="dash-motivos-empty" style="display:none;text-align:center;color:var(--cinza-texto);font-size:13px;padding:20px;">Nenhum orçamento reprovado no período</div>
+      </div>
+
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
         <div class="table-wrap">
           <div class="table-header"><h3>📅 Orçamentos por Mês (Valor Total)</h3></div>
@@ -2349,6 +2362,8 @@ function renderDashboard() {
 
   // ===== GRÁFICO APROVADOS =====
   renderDashAprovChart(db.orcamentos);
+  // ===== GRÁFICO MOTIVOS =====
+  renderDashMotivos(all);
   // ===== GRÁFICO DE FASES =====
   renderDashFases(all);
 
@@ -2508,6 +2523,104 @@ function renderDashAprovChart(allBase) {
   }
 }
 
+
+function renderDashMotivos(all) {
+  const reprovados = all.filter(o => o.followup === 'Reprovado');
+  const emptyEl = document.getElementById('dash-motivos-empty');
+  const barsEl  = document.getElementById('dash-motivos-bars');
+  const donutEl = document.getElementById('dash-motivos-donut');
+  const legendEl= document.getElementById('dash-motivos-legend');
+  if (!barsEl || !donutEl) return;
+
+  if (!reprovados.length) {
+    barsEl.innerHTML = '';
+    donutEl.innerHTML = '';
+    legendEl.innerHTML = '';
+    if (emptyEl) emptyEl.style.display = 'block';
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  // Paleta de cores para motivos
+  const CORES_MOT = ['#B91C1C','#1D4ED8','#854D0E','#6D28D9','#065F46','#C2410C','#0E7490','#9D174D'];
+
+  // Contar por motivo
+  const contagem = {};
+  reprovados.forEach(o => {
+    const mot = db.motivos.find(m => m.id === o.motivoId);
+    const nome = mot?.nome || 'Não informado';
+    contagem[nome] = (contagem[nome] || 0) + 1;
+  });
+
+  const total = reprovados.length;
+  const itens = Object.entries(contagem)
+    .sort((a,b) => b[1]-a[1])
+    .map(([nome, qtd], i) => ({ nome, qtd, pct: Math.round(qtd/total*100), cor: CORES_MOT[i % CORES_MOT.length] }));
+
+  const maxQtd = Math.max(...itens.map(i => i.qtd), 1);
+
+  // BARRAS HORIZONTAIS
+  barsEl.innerHTML = itens.map(item => `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <div style="width:160px;min-width:160px;font-size:12px;font-weight:600;color:#374151;text-align:right;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${item.nome}">${item.nome}</div>
+      <div style="flex:1;background:#F1F5F9;border-radius:6px;height:24px;overflow:hidden;">
+        <div style="width:${Math.round(item.qtd/maxQtd*100)}%;background:${item.cor};height:100%;border-radius:6px;display:flex;align-items:center;justify-content:flex-end;padding-right:7px;min-width:${item.qtd>0?'28px':'0'};transition:.4s;">
+          ${item.qtd > 0 ? `<span style="color:#fff;font-size:11px;font-weight:800;">${item.qtd}</span>` : ''}
+        </div>
+      </div>
+      <div style="width:36px;text-align:right;font-size:11px;font-weight:700;color:${item.cor};">${item.pct}%</div>
+    </div>`).join('');
+
+  // DONUT SVG
+  const cx = 90, cy = 90, R = 72, r = 44;
+  let startAngle = -Math.PI / 2;
+  let paths = '';
+  let tooltips = '';
+
+  itens.forEach(item => {
+    const angle = (item.qtd / total) * 2 * Math.PI;
+    const endAngle = startAngle + angle;
+    const x1 = cx + R * Math.cos(startAngle);
+    const y1 = cy + R * Math.sin(startAngle);
+    const x2 = cx + R * Math.cos(endAngle);
+    const y2 = cy + R * Math.sin(endAngle);
+    const xi1 = cx + r * Math.cos(startAngle);
+    const yi1 = cy + r * Math.sin(startAngle);
+    const xi2 = cx + r * Math.cos(endAngle);
+    const yi2 = cy + r * Math.sin(endAngle);
+    const large = angle > Math.PI ? 1 : 0;
+
+    // Ponto central da fatia para label
+    const midAngle = startAngle + angle / 2;
+    const lx = cx + (R+r)/2 * Math.cos(midAngle);
+    const ly = cy + (R+r)/2 * Math.sin(midAngle);
+
+    paths += `<path d="M${x1},${y1} A${R},${R} 0 ${large},1 ${x2},${y2} L${xi2},${yi2} A${r},${r} 0 ${large},0 ${xi1},${yi1} Z"
+      fill="${item.cor}" opacity="0.9" stroke="#fff" stroke-width="2">
+      <title>${item.nome}: ${item.qtd} (${item.pct}%)</title>
+    </path>`;
+    if (item.pct >= 8) {
+      paths += `<text x="${lx}" y="${ly+4}" text-anchor="middle" font-size="10" fill="#fff" font-weight="800">${item.pct}%</text>`;
+    }
+    startAngle = endAngle;
+  });
+
+  // Centro do donut
+  paths += `<circle cx="${cx}" cy="${cy}" r="${r-2}" fill="#fff"/>`;
+  paths += `<text x="${cx}" y="${cy-6}" text-anchor="middle" font-size="22" font-weight="800" fill="#1B3A6B" font-family="Nunito,sans-serif">${total}</text>`;
+  paths += `<text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="10" fill="#64748b" font-weight="600">reprovados</text>`;
+
+  donutEl.innerHTML = paths;
+
+  // LEGENDA
+  legendEl.innerHTML = itens.map(item => `
+    <div style="display:flex;align-items:center;gap:7px;">
+      <span style="width:10px;height:10px;border-radius:50%;background:${item.cor};flex-shrink:0;display:inline-block;"></span>
+      <span style="color:#374151;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${item.nome}">${item.nome}</span>
+      <strong style="color:${item.cor};flex-shrink:0;">${item.qtd}</strong>
+    </div>`).join('');
+}
+
 function renderDashFases(all) {
   const el = document.getElementById('dash-fases-chart');
   if (!el) return;
@@ -2517,7 +2630,7 @@ function renderDashFases(all) {
 
   // Calcular fases para cada orçamento
   function getFase(o) {
-    if (o.followup === 'Reprovado') return null; // ignorar reprovados
+    if (o.followup === 'Reprovado') return 'reprovado';
     if (o.statusInstalacao === 'Concluído') {
       const isPago = o.statusCobranca === 'Pago';
       return isPago ? 'cobrado' : 'aguard_cobranca';
@@ -2549,6 +2662,7 @@ function renderDashFases(all) {
     { key: 'manutencao',     label: '🔧 Manutenção Interna',   cor: '#7C3AED', bg: '#EDE9FE' },
     { key: 'aguard_cobranca',label: '💰 Aguardando Cobrança',  cor: '#B91C1C', bg: '#FEE2E2' },
     { key: 'cobrado',        label: '✅ Cobrado/Pago',          cor: '#15803D', bg: '#D1FAE5' },
+    { key: 'reprovado',      label: '❌ Reprovados',            cor: '#7F1D1D', bg: '#FEE2E2' },
   ];
 
   // Contar por fase
@@ -2556,23 +2670,24 @@ function renderDashFases(all) {
   fasesDef.forEach(f => contagem[f.key] = 0);
   all.forEach(o => {
     const fase = getFase(o);
-    if (fase !== null && contagem[fase] !== undefined) contagem[fase]++;
+    if (fase && contagem[fase] !== undefined) contagem[fase]++;
   });
 
   const maxVal = Math.max(...Object.values(contagem), 1);
-  const total = all.filter(o => o.followup !== 'Reprovado').length || 1;
+  const totalSemReprov = all.filter(o => o.followup !== 'Reprovado').length || 1;
+  const total = all.length || 1;
 
   // Renderizar como barras horizontais
   const barras = fasesDef.map(f => {
     const qtd = contagem[f.key] || 0;
     const pct = Math.round(qtd / maxVal * 100);
-    const pctTotal = Math.round(qtd / total * 100);
-    if (qtd === 0 && !['orcamento','aguard_cliente','cobrado'].includes(f.key)) return ''; // ocultar fases vazias (exceto as principais)
+    const pctTotal = f.key === 'reprovado' ? Math.round(qtd / total * 100) : Math.round(qtd / totalSemReprov * 100);
+    if (qtd === 0 && !['orcamento','aguard_cliente','cobrado','reprovado'].includes(f.key)) return ''; // ocultar fases vazias (exceto as principais)
     return `
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
         <div style="width:200px;min-width:200px;font-size:12px;font-weight:600;color:#374151;text-align:right;line-height:1.3;">${f.label}</div>
-        <div style="flex:1;background:#F1F5F9;border-radius:8px;height:28px;overflow:hidden;position:relative;">
-          <div style="width:${pct}%;background:${f.cor};height:100%;border-radius:8px;transition:.4s;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;min-width:${qtd>0?'32px':'0'};">
+        <div style="flex:1;background:#F1F5F9;border-radius:8px;height:28px;overflow:hidden;position:relative;${f.key==='reprovado'?'border:2px dashed #B91C1C;background:#FEF2F2;':''}">
+          <div style="width:${pct}%;background:${f.cor};height:100%;border-radius:6px;transition:.4s;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;min-width:${qtd>0?'32px':'0'};opacity:${f.key==='reprovado'?'0.7':'1'};">
             ${qtd > 0 ? `<span style="color:#fff;font-size:12px;font-weight:800;font-family:'Nunito',sans-serif;">${qtd}</span>` : ''}
           </div>
         </div>
@@ -2591,7 +2706,7 @@ function renderDashFases(all) {
       </div>
       ${barras}
       <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--cinza-border);font-size:12px;color:var(--cinza-texto);">
-        Total considerado: <strong>${total}</strong> orçamento(s) &nbsp;|&nbsp; Reprovados excluídos do funil
+        Total considerado: <strong>${all.length}</strong> orçamento(s) &nbsp;|&nbsp; ✅ Ativos: ${totalSemReprov} &nbsp;|&nbsp; ❌ Reprovados incluídos abaixo
       </div>
     </div>`;
 }
