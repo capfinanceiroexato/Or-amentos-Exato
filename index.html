@@ -1186,7 +1186,7 @@ function filterOrc(list, prefixo) {
 
 function renderOrcamentos() {
   const statusFilter = document.getElementById('orc-filter-status')?.value || '';
-  let list = db.orcamentos.filter(o => !['Concluído','Reprovado','Instalação'].includes(o.followup));
+  let list = db.orcamentos.filter(o => !['Concluído','Reprovado','Instalação'].includes(o.followup) && o.status !== 'Enviado ao cliente' && o.status !== 'Reprovado');
   if (statusFilter) list = list.filter(o => o.status === statusFilter);
   list = filterOrc(list, 'orc');
   document.getElementById('tbl-orcamentos').innerHTML = list.length ? list.map(o => {
