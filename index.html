@@ -194,6 +194,26 @@ tr:hover td{background:#FAFBFD;}
 #alerta-lembrete{position:fixed;inset:0;z-index:99999;display:none;pointer-events:auto;align-items:center;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);}
 
 .alerta-box{background:#fff;border-radius:20px;padding:36px 32px;width:100%;max-width:460px;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.35);animation:alertaIn .35s cubic-bezier(.34,1.56,.64,1) both;}
+@keyframes pisca{from{opacity:1}to{opacity:.35}}
+/* CRONÔMETRO */
+.crono-wrap{display:inline-flex;align-items:center;gap:6px;background:#1B3A6B;color:#fff;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;font-family:'Nunito',sans-serif;}
+.crono-wrap.green{background:#15803D;}
+.crono-wrap.orange{background:#B45309;}
+.crono-wrap.red{background:#B91C1C;animation:pisca .6s infinite alternate;}
+.crono-time{font-size:13px;letter-spacing:.05em;}
+.crono-label{font-size:10px;opacity:.75;display:block;line-height:1;}
+.btn-crono{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:7px;background:#1B3A6B;color:#fff;border:none;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;transition:.15s;}
+.btn-crono:hover{background:#3CB54A;}
+.btn-crono.ativo{background:#B91C1C;}
+.btn-crono.ativo:hover{background:#991B1B;}
+
+/* PAINEL HORÁRIO */
+.horario-card{background:#fff;border:1px solid var(--cinza-border);border-radius:12px;padding:20px;margin-bottom:18px;}
+.horario-titulo{font-family:'Nunito',sans-serif;font-weight:700;font-size:14px;color:var(--azul-escuro);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--cinza-border);display:flex;align-items:center;gap:8px;}
+.dias-grid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.dia-btn{padding:6px 14px;border-radius:20px;border:1.5px solid var(--cinza-border);background:#fff;font-size:12px;font-weight:700;cursor:pointer;transition:.15s;color:var(--cinza-texto);}
+.dia-btn.ativo{background:#1B3A6B;color:#fff;border-color:#1B3A6B;}
+
 @keyframes alertaIn{from{opacity:0;transform:scale(.8) translateY(30px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .alerta-icon{font-size:56px;margin-bottom:12px;animation:shake 0.6s ease 0.4s both;}
 @keyframes shake{0%,100%{transform:rotate(0)}20%{transform:rotate(-12deg)}40%{transform:rotate(12deg)}60%{transform:rotate(-8deg)}80%{transform:rotate(8deg)}}
@@ -268,6 +288,7 @@ tr:hover td{background:#FAFBFD;}
     <div class="menu-item" onclick="nav('cobranca')"><span class="mi">💰</span> Cobrança <span class="menu-badge" id="badge-cobranca" style="display:none">0</span></div>
     <div class="menu-item" onclick="nav('reprovados')"><span class="mi">❌</span> Reprovados <span class="menu-badge red" id="badge-reprovados">0</span></div>
     <div class="menu-item admin-only" onclick="nav('admin')" id="menu-admin" style="display:none;"><span class="mi">⚙️</span> Administração</div>
+    <div class="menu-item admin-only" onclick="nav('horario')" id="menu-horario" style="display:none;"><span class="mi">🕐</span> Horário de Trabalho</div>
   </div>
   <div class="sidebar-user" style="flex-direction:column;align-items:flex-start;gap:8px;">
     <div style="display:flex;align-items:center;gap:10px;width:100%;">
@@ -429,7 +450,7 @@ tr:hover td{background:#FAFBFD;}
       </div>
       <div class="table-wrap">
         <div class="table-header"><h3>Orçamentos Lançados</h3></div>
-        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Entrada</th><th>Conclusão</th><th>Lead Time</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbl-orcamentos"></tbody></table></div>
+        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Entrada</th><th>Conclusão</th><th>Lead Time</th><th>Aguardando</th><th>Status</th><th>Cronômetro</th><th>Ações</th></tr></thead><tbody id="tbl-orcamentos"></tbody></table></div>
       </div>
     </div>
 
@@ -461,7 +482,7 @@ tr:hover td{background:#FAFBFD;}
       </div>
       <div class="table-wrap">
         <div class="table-header"><h3>🏗️ Projetos em Instalação</h3></div>
-        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Início</th><th>Previsão</th><th>Lead Time</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbl-instalacao"></tbody></table></div>
+        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Início</th><th>Previsão</th><th>Lead Time</th><th>Cronômetro</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbl-instalacao"></tbody></table></div>
       </div>
     </div>
 
@@ -593,6 +614,56 @@ tr:hover td{background:#FAFBFD;}
 
   </div>
 </div>
+
+
+    <!-- HORÁRIO DE TRABALHO -->
+    <div class="screen" id="screen-horario">
+      <div style="max-width:700px;padding:0 0 32px;">
+        <div class="horario-card">
+          <div class="horario-titulo">🕐 Configuração de Horário de Trabalho</div>
+          <p style="font-size:13px;color:var(--cinza-texto);margin-bottom:16px;">Define o horário comercial usado para calcular o cronômetro de início das atividades.</p>
+
+          <div class="form-grid" style="margin-bottom:16px;">
+            <div class="form-group">
+              <label>Horário de Início</label>
+              <input type="time" id="hr-inicio" value="08:00">
+            </div>
+            <div class="form-group">
+              <label>Horário de Término</label>
+              <input type="time" id="hr-fim" value="18:00">
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:16px;">
+            <label>Dias de Trabalho</label>
+            <div class="dias-grid" id="dias-grid">
+              <button class="dia-btn ativo" data-dia="1" onclick="toggleDia(this)">Seg</button>
+              <button class="dia-btn ativo" data-dia="2" onclick="toggleDia(this)">Ter</button>
+              <button class="dia-btn ativo" data-dia="3" onclick="toggleDia(this)">Qua</button>
+              <button class="dia-btn ativo" data-dia="4" onclick="toggleDia(this)">Qui</button>
+              <button class="dia-btn ativo" data-dia="5" onclick="toggleDia(this)">Sex</button>
+              <button class="dia-btn" data-dia="6" onclick="toggleDia(this)">Sáb</button>
+              <button class="dia-btn" data-dia="0" onclick="toggleDia(this)">Dom</button>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:20px;">
+            <label>Tempo limite para iniciar (horas)</label>
+            <input type="number" id="hr-limite" value="2" min="1" max="48" style="max-width:120px;">
+            <span style="font-size:12px;color:var(--cinza-texto);margin-top:4px;display:block;">Após este tempo sem iniciar → cronômetro fica vermelho piscando</span>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="salvarHorario()">💾 Salvar Configurações</button>
+          </div>
+        </div>
+
+        <div class="horario-card">
+          <div class="horario-titulo">📋 Resumo atual</div>
+          <div id="horario-resumo" style="font-size:14px;color:var(--texto);line-height:2;"></div>
+        </div>
+      </div>
+    </div>
 
 <!-- MODAL FOLLOW-UP -->
 <div class="modal-overlay" id="modal-followup">
@@ -808,7 +879,7 @@ const screenTitles = {
   dashboard:'Dashboard', produtos:'Cadastro de Produtos', subprodutos:'Cadastro de Subprodutos',
   clientes:'Cadastro de Clientes', motivos:'Motivos de Reprovação', orcamentos:'Lançamento de Orçamento',
   aguardando:'Aguardando Cliente', instalacao:'Instalação', concluidos:'Projetos Concluídos',
-  cobranca:'Cobrança', reprovados:'Orçamentos Reprovados', calendario:'Calendário de Instalações', admin:'Administração do Sistema'
+  cobranca:'Cobrança', reprovados:'Orçamentos Reprovados', calendario:'Calendário de Instalações', admin:'Administração do Sistema', horario:'Horário de Trabalho'
 };
 const screenActions = {
   produtos: '<button class="btn btn-primary btn-sm" onclick="clearForm(\'prod\')">+ Novo Produto</button>',
@@ -828,7 +899,7 @@ function nav(screen) {
     dashboard: renderDashboard, produtos: renderProdutos, subprodutos: () => { populateSubPai(); renderSubprodutos(); },
     clientes: renderClientes, motivos: renderMotivos, orcamentos: () => { populateOrcSelects(); renderOrcamentos(); },
     aguardando: renderAguardando, instalacao: renderInstalacao, concluidos: renderConcluidos,
-    cobranca: renderCobranca, reprovados: renderReprovados, calendario: renderCalendario, admin: renderAdmin
+    cobranca: renderCobranca, reprovados: renderReprovados, calendario: renderCalendario, admin: renderAdmin, horario: renderHorario
   };
   if (renders[screen]) renders[screen]();
 }
@@ -1052,10 +1123,11 @@ function calcLeadTime(entrada, conclusao) {
   const days = Math.ceil((d2 - d1) / 86400000);
   return days;
 }
-function ltBadge(days) {
-  if (days <= 7) return `<span class="lt-badge lt-ok">⏱ ${days}d</span>`;
-  if (days <= 15) return `<span class="lt-badge lt-warn">⏱ ${days}d</span>`;
-  return `<span class="lt-badge lt-over">⏱ ${days}d</span>`;
+function ltBadge(days, semConclusao=false) {
+  const label = semConclusao ? `⏳ ${days}d parado` : `⏱ ${days}d`;
+  if (days <= 5) return `<span class="lt-badge lt-ok">${label}</span>`;
+  if (days <= 9) return `<span class="lt-badge lt-warn">${label}</span>`;
+  return `<span class="lt-badge lt-over" style="animation:pisca .8s infinite alternate;">${label}</span>`;
 }
 function fmtDate(d) { if (!d) return '-'; const p=d.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
 function fmtVal(v) { return 'R$ ' + (v||0).toLocaleString('pt-BR', {minimumFractionDigits:2}); }
@@ -1107,15 +1179,24 @@ function renderOrcamentos() {
   document.getElementById('tbl-orcamentos').innerHTML = list.length ? list.map(o => {
     const cli = db.clientes.find(c => c.id === o.clienteId);
     const prod = db.produtos.find(p => p.id === o.produtoId);
+    const semConclusao = !o.dtConclusao;
     const days = calcLeadTime(o.dtEntrada, o.dtConclusao);
+    const aguardando = o.status === 'Enviado ao cliente';
+    const diasAguardando = aguardando ? calcLeadTime(o.dtEnvioCliente || o.dtEntrada, null) : null;
+    const aguardandoBadge = aguardando
+      ? (diasAguardando >= 10
+          ? `<span class="lt-badge lt-over" style="animation:pisca .8s infinite alternate;">🔴 ${diasAguardando}d aguardando</span>`
+          : `<span class="lt-badge lt-warn">⏳ ${diasAguardando}d aguardando</span>`)
+      : '<span class="lt-badge badge-gray" style="background:#f1f5f9;color:#64748b;">—</span>';
     const stBadge = o.status === 'Em andamento' ? '<span class="badge badge-blue">Em andamento</span>' : '<span class="badge badge-orange">Enviado ao cliente</span>';
     const actions = o.status === 'Enviado ao cliente' ? `<button class="btn btn-primary btn-sm" onclick="openFollowup('${o.id}')">📞 Follow-up</button>` : `<button class="btn btn-secondary btn-sm" onclick="enviarCliente('${o.id}')">📤 Enviar</button>`;
-    return `<tr><td><strong>ORC-${String(o._num).padStart(3,'0')}</strong></td><td>${cli?.nome||'-'}</td><td>${prod?.nome||'-'}</td><td>${fmtVal(o.valor)}</td><td>${fmtDate(o.dtEntrada)}</td><td>${fmtDate(o.dtConclusao)||'—'}</td><td>${ltBadge(days)}</td><td>${stBadge}</td><td class="td-actions">${actions}<button class="btn-bell btn-sm" onclick="abrirLembreteOrc('${o.id}')" title="Criar lembrete">🔔</button><button class="btn btn-secondary btn-sm" onclick="abrirEditarOrc('${o.id}')">✏️</button><button class="btn btn-danger btn-sm" onclick="delOrc('${o.id}')">🗑</button></td></tr>`;
+    const trStyle = days >= 10 && semConclusao ? ' style="background:#fff5f5;"' : '';
+    return `<tr${trStyle}><td><strong>ORC-${String(o._num).padStart(3,'0')}</strong></td><td>${cli?.nome||'-'}</td><td>${prod?.nome||'-'}</td><td>${fmtVal(o.valor)}</td><td>${fmtDate(o.dtEntrada)}</td><td>${fmtDate(o.dtConclusao)||'<span style="color:#94a3b8;font-size:11px;">sem data</span>'}</td><td>${ltBadge(days, semConclusao)}</td><td>${aguardandoBadge}</td><td>${stBadge}</td><td class="td-actions">${actions}<button class="btn-bell btn-sm" onclick="abrirLembreteOrc('${o.id}')" title="Criar lembrete">🔔</button><button class="btn btn-secondary btn-sm" onclick="abrirEditarOrc('${o.id}')">✏️</button><button class="btn btn-danger btn-sm" onclick="delOrc('${o.id}')">🗑</button></td></tr>`;
   }).join('') : '<tr><td colspan="9"><div class="empty-state"><div class="ei">📝</div><p>Nenhum orçamento encontrado</p></div></td></tr>';
 }
 async function enviarCliente(id) {
   const o = db.orcamentos.find(x => x.id === id);
-  if (o) { o.status = 'Enviado ao cliente'; await save(); renderOrcamentos(); renderAguardando(); toast('Orçamento enviado ao cliente!', 'success'); }
+  if (o) { o.status = 'Enviado ao cliente'; o.dtEnvioCliente = new Date().toISOString().slice(0,10); await save(); renderOrcamentos(); renderAguardando(); toast('Orçamento enviado ao cliente!', 'success'); }
 }
 async function delOrc(id) { if(confirm('Excluir orçamento?')) { db.orcamentos = db.orcamentos.filter(o => o.id !== id); await save(); renderOrcamentos(); } }
 
@@ -1178,10 +1259,15 @@ function renderInstalacao() {
     const cli = db.clientes.find(c => c.id === o.clienteId);
     const prod = db.produtos.find(p => p.id === o.produtoId);
     const days = calcLeadTime(o.dtInstalacaoInicio, o.dtInstalacaoConclusao);
+    const btnCronoInst = o.cronoAtivo
+      ? `<button class="btn-crono ativo btn-sm" onclick="pararCrono('${o.id}')">⏹ Parar</button>`
+      : `<button class="btn-crono btn-sm" onclick="abrirModalCrono('${o.id}','inst')">⏱ Iniciar</button>`;
     return `<tr><td><strong>ORC-${String(o._num).padStart(3,'0')}</strong></td><td>${cli?.nome||'-'}</td><td>${prod?.nome||'-'}</td><td>${fmtVal(o.valor)}</td>
     <td>${fmtDate(o.dtInstalacaoInicio)}</td><td>${fmtDate(o.dtInstalacaoConclusao)||'—'}</td><td>${ltBadge(days)}</td>
+    <td><div id="crono-cell-${o.id}">${cronoDisplay(o)}</div></td>
     <td><span class="badge badge-orange">Em andamento</span></td>
     <td class="td-actions">
+      ${btnCronoInst}
       <button class="btn btn-success btn-sm" onclick="openInstModal('${o.id}')">▶ Avançar</button>
       <button class="btn btn-secondary btn-sm" onclick="abrirEditarOrc('${o.id}')">✏️</button>
       <button class="btn btn-sm" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" onclick="abrirReverter('${o.id}','instalacao')">↩️ Reverter</button>
@@ -1249,6 +1335,7 @@ function getPerms() {
 function applyPerms() {
   const isAdmin = usuarioLogado?.perfil === 'admin';
   document.getElementById('menu-admin').style.display = isAdmin ? 'flex' : 'none';
+  const mh = document.getElementById('menu-horario'); if(mh) mh.style.display = isAdmin ? 'flex' : 'none';
   const perms = getPerms();
   document.querySelectorAll('.menu-item[onclick]').forEach(el => {
     const match = el.getAttribute('onclick').match(/nav\('(\w+)'\)/);
@@ -2221,6 +2308,34 @@ atualizarBellBadge();
   </div>
 </div>
 
+
+<!-- MODAL CRONÔMETRO INÍCIO -->
+<div class="modal-overlay" id="modal-crono">
+  <div class="modal" style="max-width:420px;">
+    <button class="modal-close" onclick="closeModal('modal-crono')">✕</button>
+    <div class="modal-title">⏱ Definir Início</div>
+    <input type="hidden" id="crono-id">
+    <input type="hidden" id="crono-tipo">
+    <p style="font-size:13px;color:var(--cinza-texto);margin-bottom:16px;">Defina quando esta atividade deve iniciar. O cronômetro fará contagem regressiva até o horário definido.</p>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label>Data de Início Prevista</label>
+      <input type="date" id="crono-data">
+    </div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label>Horário de Início Previsto</label>
+      <input type="time" id="crono-hora" value="08:00">
+    </div>
+    <div class="form-group" style="margin-bottom:20px;">
+      <label>Observação</label>
+      <input type="text" id="crono-obs" placeholder="Ex: Aguardando material, equipe confirmada...">
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-crono')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarCrono()">▶ Iniciar Contagem</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL MARCAR PAGO -->
 <div class="modal-overlay" id="modal-pagar">
   <div class="modal" style="max-width:400px;">
@@ -2330,6 +2445,115 @@ atualizarBellBadge();
 
 
 <script>
+
+// ===== HORÁRIO DE TRABALHO =====
+let configHorario = { inicio: '08:00', fim: '18:00', dias: [1,2,3,4,5], limiteHoras: 2 };
+
+function carregarHorario() {
+  const saved = localStorage.getItem('exato_horario');
+  if (saved) configHorario = JSON.parse(saved);
+}
+function salvarHorario() {
+  configHorario.inicio = document.getElementById('hr-inicio').value;
+  configHorario.fim = document.getElementById('hr-fim').value;
+  configHorario.limiteHoras = parseInt(document.getElementById('hr-limite').value) || 2;
+  configHorario.dias = [...document.querySelectorAll('.dia-btn.ativo')].map(b => parseInt(b.dataset.dia));
+  localStorage.setItem('exato_horario', JSON.stringify(configHorario));
+  renderHorarioResumo();
+  toast('Horário salvo!', 'success');
+}
+function toggleDia(btn) { btn.classList.toggle('ativo'); }
+function renderHorario() {
+  carregarHorario();
+  document.getElementById('hr-inicio').value = configHorario.inicio;
+  document.getElementById('hr-fim').value = configHorario.fim;
+  document.getElementById('hr-limite').value = configHorario.limiteHoras;
+  document.querySelectorAll('.dia-btn').forEach(b => {
+    b.classList.toggle('ativo', configHorario.dias.includes(parseInt(b.dataset.dia)));
+  });
+  renderHorarioResumo();
+}
+function renderHorarioResumo() {
+  const nomes = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const diasStr = configHorario.dias.sort((a,b)=>a-b).map(d => nomes[d]).join(', ');
+  document.getElementById('horario-resumo').innerHTML =
+    `<div>⏰ <strong>Horário:</strong> ${configHorario.inicio} às ${configHorario.fim}</div>
+     <div>📅 <strong>Dias:</strong> ${diasStr}</div>
+     <div>🔴 <strong>Alerta vermelho após:</strong> ${configHorario.limiteHoras}h sem iniciar</div>`;
+}
+
+// ===== CRONÔMETRO =====
+let cronoIntervals = {};
+
+function abrirModalCrono(id, tipo) {
+  document.getElementById('crono-id').value = id;
+  document.getElementById('crono-tipo').value = tipo;
+  document.getElementById('crono-data').value = new Date().toISOString().slice(0,10);
+  document.getElementById('crono-hora').value = configHorario.inicio;
+  document.getElementById('crono-obs').value = '';
+  document.getElementById('modal-crono').classList.add('open');
+}
+function salvarCrono() {
+  const id = document.getElementById('crono-id').value;
+  const o = db.orcamentos.find(x => x.id === id);
+  if (!o) return;
+  o.cronoData = document.getElementById('crono-data').value;
+  o.cronoHora = document.getElementById('crono-hora').value;
+  o.cronoObs  = document.getElementById('crono-obs').value;
+  o.cronoAtivo = true;
+  save();
+  closeModal('modal-crono');
+  renderOrcamentos();
+  renderInstalacao();
+  toast('Cronômetro iniciado!', 'success');
+  iniciarCronoTicker();
+}
+function cronoDisplay(o) {
+  if (!o.cronoAtivo || !o.cronoData || !o.cronoHora) return '';
+  const alvo = new Date(`${o.cronoData}T${o.cronoHora}:00`);
+  const agora = new Date();
+  const diff = alvo - agora;
+  const limiteMs = (configHorario.limiteHoras || 2) * 3600000;
+
+  if (diff <= 0) {
+    // já passou — mostrando há quanto tempo passou
+    const passou = Math.abs(diff);
+    const h = Math.floor(passou/3600000);
+    const m = Math.floor((passou%3600000)/60000);
+    const s = Math.floor((passou%60000)/1000);
+    const tempo = h > 0 ? `${h}h ${m}m` : `${m}m ${s}s`;
+    const cls = passou > limiteMs ? 'red' : 'orange';
+    return `<div class="crono-wrap ${cls}"><span class="crono-label">⚠ Atrasado há</span><span class="crono-time">${tempo}</span></div>`;
+  } else {
+    // contagem regressiva
+    const h = Math.floor(diff/3600000);
+    const m = Math.floor((diff%3600000)/60000);
+    const s = Math.floor((diff%60000)/1000);
+    const tempo = h > 0 ? `${h}h ${m}m` : `${m}m ${s}s`;
+    const cls = diff < 3600000 ? 'orange' : 'green';
+    return `<div class="crono-wrap ${cls}"><span class="crono-label">▶ Inicia em</span><span class="crono-time">${tempo}</span></div>`;
+  }
+}
+function iniciarCronoTicker() {
+  if (window._cronoTicker) clearInterval(window._cronoTicker);
+  window._cronoTicker = setInterval(() => {
+    const ativos = db.orcamentos.filter(o => o.cronoAtivo);
+    if (!ativos.length) return;
+    // Re-renderiza só as células de cronômetro sem reload completo
+    ativos.forEach(o => {
+      const el = document.getElementById('crono-cell-' + o.id);
+      if (el) el.innerHTML = cronoDisplay(o);
+    });
+  }, 1000);
+}
+function pararCrono(id) {
+  const o = db.orcamentos.find(x => x.id === id);
+  if (o) { o.cronoAtivo = false; o.cronoData = null; o.cronoHora = null; save(); renderOrcamentos(); renderInstalacao(); }
+}
+
+carregarHorario();
+setTimeout(iniciarCronoTicker, 2000);
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(() => {});
