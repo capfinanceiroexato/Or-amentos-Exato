@@ -2294,8 +2294,8 @@ async function confirmarReverter() {
       o.followup = '';
       break;
     case 'reprovado':
-      o.followup = '3ª Ligação';
-      o.status = 'Enviado ao cliente';
+      o.followup = '';
+      o.status = 'Em andamento';
       o.motivoId = '';
       o.obsReprov = '';
       o.dtReprov = '';
@@ -2305,6 +2305,7 @@ async function confirmarReverter() {
   closeModal('modal-reverter');
   renderOrcamentos(); renderAguardando(); renderInstalacao(); renderConcluidos(); renderReprovados(); updateBadges();
   toast('Status revertido com sucesso!', 'success');
+  if (reverterTipoPendente === 'reprovado') setTimeout(() => nav('orcamentos'), 600);
 }
 
 // ===== REPROVADOS =====
@@ -4131,7 +4132,7 @@ async function confirmarReprovacao() {
   o.followup     = 'Reprovado';
   o.status       = 'Reprovado';
   o.dtReprov     = new Date().toISOString().slice(0,10);
-  o.motivoReprovId = motivoId;
+  o.motivoId = motivoId;
   o.obsReprov    = obs;
 
   await save();
