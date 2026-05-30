@@ -488,7 +488,7 @@ tr:hover td{background:#FAFBFD;}
       <div class="stats-grid" id="con-stats"></div>
       <div class="table-wrap">
         <div class="table-header"><h3>✅ Projetos Concluídos</h3></div>
-        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Conclusão</th><th>Lead Time Total</th><th>Ações</th></tr></thead><tbody id="tbl-concluidos"></tbody></table></div>
+        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Entrada</th><th>Enviado</th><th>Concluído</th><th>Pago em</th><th title="Entrada → Conclusão instalação">⏱ Orçamento→Conclusão</th><th title="Entrada → Pagamento">💰 Entrada→Pagamento</th><th>Ações</th></tr></thead><tbody id="tbl-concluidos"></tbody></table></div>
       </div>
     </div>
 
@@ -1136,6 +1136,13 @@ function calcLeadTime(entrada, conclusao) {
   const days = Math.ceil((d2 - d1) / 86400000);
   return days;
 }
+
+function ltBadgeDetalhe(days, dtIni, dtFim, label) {
+  const cls = days <= 7 ? 'lt-ok' : days <= 15 ? 'lt-warn' : 'lt-over';
+  const tip = `${label}: ${fmtDate(dtIni)} → ${fmtDate(dtFim)}`;
+  return `<span class="lt-badge ${cls}" title="${tip}">⏱ ${days}d</span>`;
+}
+
 function ltBadge(days, semConclusao=false) {
   const label = semConclusao ? `⏳ ${days}d parado` : `⏱ ${days}d`;
   if (days <= 5) return `<span class="lt-badge lt-ok">${label}</span>`;
@@ -1382,9 +1389,35 @@ function renderConcluidos() {
   document.getElementById('tbl-concluidos').innerHTML = list.length ? list.map(o => {
     const cli = db.clientes.find(c => c.id === o.clienteId);
     const prod = db.produtos.find(p => p.id === o.produtoId);
-    const days = calcLeadTime(o.dtEntrada, o.dtConcluido || o.dtInstalacaoConclusao);
-    return `<tr><td><strong>ORC-${String(o._num).padStart(3,'0')}</strong></td><td>${cli?.nome||'-'}</td><td>${prod?.nome||'-'}</td><td>${fmtVal(o.valor)}</td><td>${fmtDate(o.dtConcluido||o.dtInstalacaoConclusao)}</td><td>${ltBadge(days)}</td><td class="td-actions"><button class="btn btn-secondary btn-sm" onclick="abrirEditarOrc('${o.id}')">✏️ Editar</button><button class="btn btn-sm" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" onclick="abrirReverter('${o.id}','concluido')">↩️ Reverter</button></td></tr>`;
-  }).join('') : '<tr><td colspan="7"><div class="empty-state"><div class="ei">✅</div><p>Nenhum projeto concluído ainda</p></div></td></tr>';
+    const dtFim = o.dtConcluido || o.dtInstalacaoConclusao;
+    const dtPago = o.dtPagamento || null;
+
+    // Lead time 1: Entrada → Conclusão instalação
+    const daysOrcCon = calcLeadTime(o.dtEntrada, dtFim);
+    const ltOrcCon = ltBadgeDetalhe(daysOrcCon, o.dtEntrada, dtFim, 'Entrada → Conclusão');
+
+    // Lead time 2: Entrada → Pagamento (se pago)
+    const ltEntPag = dtPago
+      ? ltBadgeDetalhe(calcLeadTime(o.dtEntrada, dtPago), o.dtEntrada, dtPago, 'Entrada → Pagamento')
+      : '<span style="color:#94a3b8;font-size:11px;">Aguardando</span>';
+
+    return `<tr>
+      <td><strong>ORC-${String(o._num).padStart(3,'0')}</strong></td>
+      <td>${cli?.nome||'-'}</td>
+      <td>${prod?.nome||'-'}</td>
+      <td>${fmtVal(o.valor)}</td>
+      <td>${fmtDate(o.dtEntrada)}</td>
+      <td>${fmtDate(o.dtEnvioCliente)||'—'}</td>
+      <td>${fmtDate(dtFim)||'—'}</td>
+      <td>${dtPago ? fmtDate(dtPago) : '<span style="color:#94a3b8;font-size:11px;">—</span>'}</td>
+      <td>${ltOrcCon}</td>
+      <td>${ltEntPag}</td>
+      <td class="td-actions">
+        <button class="btn btn-secondary btn-sm" onclick="abrirEditarOrc('${o.id}')">✏️ Editar</button>
+        <button class="btn btn-sm" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" onclick="abrirReverter('${o.id}','concluido')">↩️ Reverter</button>
+      </td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="11"><div class="empty-state"><div class="ei">✅</div><p>Nenhum projeto concluído ainda</p></div></td></tr>';
 }
 
 
