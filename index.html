@@ -297,6 +297,7 @@ tr:hover td{background:#FAFBFD;}
       <div class="user-avatar">AD</div>
       <div class="user-info" style="flex:1;">Administrador<span>admin</span></div>
     </div>
+    <div id="ultimo-acesso" style="font-size:10px;color:rgba(255,255,255,.45);width:100%;line-height:1.4;"></div>
     <div style="display:flex;gap:6px;width:100%;">
       <button id="btn-trocar-senha" onclick="abrirTrocarSenha()" style="flex:1;background:rgba(255,255,255,.12);color:#fff;border:none;border-radius:6px;padding:5px 0;font-size:11px;cursor:pointer;">🔑 Senha</button>
       <button onclick="logout()" style="flex:1;background:rgba(255,100,100,.25);color:#fff;border:none;border-radius:6px;padding:5px 0;font-size:11px;cursor:pointer;">🚪 Sair</button>
@@ -311,6 +312,10 @@ tr:hover td{background:#FAFBFD;}
   <div id="topbar">
     <div class="topbar-title" id="topbar-title">Dashboard</div>
     <div class="topbar-actions" id="topbar-actions">
+      <button id="btn-atualizar" onclick="atualizarSistema()" title="Atualizar dados"
+        style="background:rgba(27,58,107,.08);border:1.5px solid var(--cinza-border);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;color:var(--azul-escuro);font-weight:600;font-family:inherit;transition:.15s;">
+        🔄 Atualizar
+      </button>
       <button class="bell-btn" onclick="abrirPainelLembretes()" title="Lembretes">
         🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span>
       </button>
@@ -439,7 +444,6 @@ tr:hover td{background:#FAFBFD;}
       <div class="table-wrap">
         <div class="table-header">
           <h3>Orçamentos Lançados</h3>
-          <button class="btn btn-primary btn-sm" onclick="abrirModalNovoOrc()">＋ Novo Orçamento</button>
         </div>
         <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Entrada</th><th>Lead Time</th><th>Status</th><th style="min-width:170px;">⏱ Cronômetro</th><th>Ações</th></tr></thead><tbody id="tbl-orcamentos"></tbody></table></div>
       </div>
@@ -602,9 +606,14 @@ tr:hover td{background:#FAFBFD;}
             <div class="form-group"><label>Senha</label><input type="password" id="adm-senha" placeholder="Mínimo 6 caracteres"></div>
             <div class="form-group"><label>Perfil</label>
               <select id="adm-perfil" style="width:100%;border:1.5px solid var(--cinza-border);border-radius:9px;padding:11px 14px;font-size:14px;font-family:inherit;">
-                <option value="usuario">Vendedor</option>
-                <option value="admin">Admin</option>
-              </select>
+        <option value="admin">Admin</option>
+        <option value="orcamentista">Orçamentista</option>
+        <option value="tecnico1">Técnico 1</option>
+        <option value="tecnico2">Técnico 2</option>
+        <option value="tecnico3">Técnico 3</option>
+        <option value="financeiro">Financeiro</option>
+        <option value="atendimento">Atendimento</option>
+      </select>
             </div>
           </div>
           <div class="form-actions">
@@ -933,8 +942,17 @@ async function doLogin() {
     } catch(supaErr) {
       console.warn('Supabase indisponível, usando fallback local:', supaErr);
       // fallback: admin padrão
-      if (u === 'admin' && p === '3x@to_2026') {
-        rowsFinal = [{ nome: 'Administrador', login: 'admin', perfil: 'admin' }];
+      const fallbacks = {
+        'admin': { nome: 'Administrador', login: 'admin', perfil: 'admin' },
+        'orcamentista': { nome: 'Orçamentista', login: 'orcamentista', perfil: 'orcamentista' },
+        'tecnico1': { nome: 'Técnico 1', login: 'tecnico1', perfil: 'tecnico1' },
+        'tecnico2': { nome: 'Técnico 2', login: 'tecnico2', perfil: 'tecnico2' },
+        'tecnico3': { nome: 'Técnico 3', login: 'tecnico3', perfil: 'tecnico3' },
+        'financeiro': { nome: 'Financeiro', login: 'financeiro', perfil: 'financeiro' },
+        'atendimento': { nome: 'Atendimento', login: 'atendimento', perfil: 'atendimento' },
+      };
+      if (fallbacks[u] && p === '3x@to_2026') {
+        rowsFinal = [fallbacks[u]];
       }
     }
     if (rowsFinal && rowsFinal.length > 0) {
@@ -944,8 +962,8 @@ async function doLogin() {
       else { localStorage.removeItem('gestao_saved_user'); localStorage.removeItem('gestao_saved_pass'); }
       document.getElementById('login-screen').style.display = 'none';
       // Atualiza nome do usuário na sidebar
-      document.querySelector('.user-info').innerHTML = `${usuarioLogado.nome}<span>${usuarioLogado.login}</span>`;
-      document.querySelector('.user-avatar').textContent = usuarioLogado.nome.slice(0,2).toUpperCase();
+      atualizarInfoLogado();
+      
       await loadDB(); populateSelects(); renderDashboard(); updateBadges(); updateBadgeCobranca(); initCalFiltros(); applyPerms();
       // Sync automático a cada 30 segundos
       setInterval(async () => { await loadDB(); updateBadges(); updateBadgeCobranca(); }, 30000);
@@ -1232,7 +1250,7 @@ function ltBadge(days, semConclusao=false) {
   const label = semConclusao ? `⏳ ${days}d parado` : `⏱ ${days}d`;
   if (days <= 5) return `<span class="lt-badge lt-ok">${label}</span>`;
   if (days <= 9) return `<span class="lt-badge lt-warn">${label}</span>`;
-  return `<span class="lt-badge lt-over" style="animation:pisca .8s infinite alternate;">${label}</span>`;
+  return `<span class="lt-badge lt-over" >${label}</span>`;
 }
 function fmtDate(d) { if (!d) return '-'; const p=d.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
 function fmtVal(v) { return 'R$ ' + (v||0).toLocaleString('pt-BR', {minimumFractionDigits:2}); }
@@ -1367,7 +1385,7 @@ function renderAguardando() {
     const fu = o.followup || '';
     const diasAg = calcLeadTime(o.dtEnvioCliente || o.dtEntrada, null);
     const agBadge = diasAg >= 10
-      ? `<span class="lt-badge lt-over" style="animation:pisca .8s infinite alternate;">🔴 ${diasAg}d</span>`
+      ? `<span class="lt-badge lt-over" >🔴 ${diasAg}d</span>`
       : diasAg >= 5
         ? `<span class="lt-badge lt-warn">⏳ ${diasAg}d</span>`
         : `<span class="lt-badge lt-ok">🟢 ${diasAg}d</span>`;
@@ -1552,18 +1570,30 @@ const TELAS_CONFIG = [
   {key:'cobranca', label:'💰 Cobrança'},
   {key:'reprovados', label:'❌ Reprovados'},
 ];
+const PERFIL_PERMS = {
+  admin: null, // tudo
+  orcamentista: ['dashboard','orcamentos','aguardando','diretor','calendario'],
+  tecnico1: ['dashboard','instalacao','calendario'],
+  tecnico2: ['dashboard','instalacao','calendario'],
+  tecnico3: ['dashboard','instalacao','calendario'],
+  financeiro: ['dashboard','concluidos','cobranca','reprovados'],
+  atendimento: ['dashboard','orcamentos','aguardando','clientes'],
+};
 const DEFAULT_PERMS = ['dashboard','orcamentos','aguardando','instalacao','calendario','concluidos'];
 
 function getPerms() {
   return JSON.parse(localStorage.getItem('perms_vendedor') || JSON.stringify(DEFAULT_PERMS));
 }
 function applyPerms() {
-  const isAdmin = usuarioLogado?.perfil === 'admin';
+  const perfil = usuarioLogado?.perfil || 'atendimento';
+  const isAdmin = perfil === 'admin';
   document.getElementById('menu-admin').style.display = isAdmin ? 'flex' : 'none';
   const mh = document.getElementById('menu-horario'); if(mh) mh.style.display = isAdmin ? 'flex' : 'none';
   const mt = document.getElementById('menu-tecnicos'); if(mt) mt.style.display = isAdmin ? 'flex' : 'none';
   updateBadgeDiretor();
-  const perms = getPerms();
+  // Permissões por perfil
+  const perfilPerms = PERFIL_PERMS[perfil];
+  const perms = perfilPerms || getPerms();
   document.querySelectorAll('.menu-item[onclick]').forEach(el => {
     const match = el.getAttribute('onclick').match(/nav\('(\w+)'\)/);
     if (!match) return;
@@ -1589,7 +1619,7 @@ async function renderAdmUsuarios() {
     <tr>
       <td><strong>${u.nome}</strong></td>
       <td>${u.login}</td>
-      <td><span style="background:${u.perfil==='admin'?'#1E90FF22':'#22c55e22'};color:${u.perfil==='admin'?'#1E90FF':'#16a34a'};border-radius:5px;padding:2px 10px;font-size:12px;font-weight:600;">${u.perfil==='admin'?'Admin':'Vendedor'}</span></td>
+      <td><span style="background:${u.perfil==='admin'?'#1E90FF22':u.perfil==='financeiro'?'#f59e0b22':'#22c55e22'};color:${u.perfil==='admin'?'#1E90FF':u.perfil==='financeiro'?'#b45309':'#16a34a'};border-radius:5px;padding:2px 10px;font-size:12px;font-weight:600;">${({admin:'Admin',orcamentista:'Orçamentista',tecnico1:'Técnico 1',tecnico2:'Técnico 2',tecnico3:'Técnico 3',financeiro:'Financeiro',atendimento:'Atendimento'}[u.perfil]||u.perfil)}</span></td>
       <td style="display:flex;gap:6px;">
         <button class="btn btn-secondary btn-sm" onclick="editarUsuario('${u.id}','${u.nome}','${u.login}','${u.perfil}')">✏️ Editar</button>
         ${u.login!=='admin'?`<button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:none;cursor:pointer;border-radius:6px;padding:4px 10px;" onclick="delUsuario('${u.id}')">🗑️</button>`:''}
@@ -2846,7 +2876,7 @@ function renderDiretor() {
   const cli = document.getElementById('dir-filter-cli')?.value || '';
   const mes = document.getElementById('dir-filter-mes')?.value || '';
   const ano = document.getElementById('dir-filter-ano')?.value || '';
-  let list = db.orcamentos.filter(o => o.status === 'Dúvidas' && !['Concluído','Reprovado','Instalação'].includes(o.followup));
+  let list = db.orcamentos.filter(o => o.status === 'Dúvidas');
   if (cli) list = list.filter(o => o.clienteId === cli);
   if (mes) list = list.filter(o => mesFromDate(o.dtDuvida || o.dtEntrada) === mes);
   if (ano) list = list.filter(o => anoFromDate(o.dtDuvida || o.dtEntrada) === ano);
@@ -2862,7 +2892,7 @@ function renderDiretor() {
     const p = db.produtos.find(x => x.id === o.produtoId);
     const dias = calcLeadTime(o.dtDuvida || o.dtEntrada, null);
     const agBadge = dias >= 5
-      ? `<span class="lt-badge lt-over" style="animation:pisca .8s infinite alternate;">🔴 ${dias}d</span>`
+      ? `<span class="lt-badge lt-over" >🔴 ${dias}d</span>`
       : `<span class="lt-badge lt-warn">⏳ ${dias}d</span>`;
 
     // STATUS select com "Não iniciado"
@@ -2987,10 +3017,35 @@ function renderTecnicos() {
     <td>${t.tel||'—'}</td>
     <td>${t.esp||'—'}</td>
     <td class="td-actions">
+      <button class="btn btn-secondary btn-sm" onclick="editarTecnico('${t.id}')">✏️ Editar</button>
       <button class="btn btn-danger btn-sm" onclick="delTecnico('${t.id}')">🗑</button>
     </td>
   </tr>`).join('') : '<tr><td colspan="4"><div class="empty-state"><div class="ei">👷</div><p>Nenhum técnico cadastrado</p></div></td></tr>';
   populateTecSelects();
+}
+let editTecId = null;
+function editarTecnico(id) {
+  const t = db.tecnicos.find(x => x.id === id);
+  if (!t) return;
+  editTecId = id;
+  document.getElementById('tec-nome').value = t.nome;
+  document.getElementById('tec-tel').value = t.tel || '';
+  document.getElementById('tec-esp').value = t.esp || '';
+  const btn = document.querySelector('#screen-tecnicos .btn-primary');
+  if (btn) { btn.textContent = '💾 Atualizar Técnico'; btn.onclick = atualizarTecnico; }
+  window.scrollTo(0,0);
+  toast('Editando técnico — modifique e clique em Atualizar', '');
+}
+async function atualizarTecnico() {
+  const t = db.tecnicos.find(x => x.id === editTecId);
+  if (!t) return;
+  t.nome = document.getElementById('tec-nome').value.trim();
+  t.tel = document.getElementById('tec-tel').value.trim();
+  t.esp = document.getElementById('tec-esp').value.trim();
+  await save(); clearTecnico(); renderTecnicos(); editTecId = null;
+  const btn = document.querySelector('#screen-tecnicos .btn-primary');
+  if (btn) { btn.textContent = '💾 Salvar Técnico'; btn.onclick = salvarTecnico; }
+  toast('Técnico atualizado!', 'success');
 }
 async function delTecnico(id) {
   if (!confirm('Excluir técnico?')) return;
@@ -3009,6 +3064,49 @@ async function salvarTecnicoInst(orcId, tecId) {
   if (!o) return;
   o.tecnicoId = tecId;
   await save(); renderInstalacao(); toast('Técnico atribuído!', 'success');
+}
+
+
+async function atualizarSistema() {
+  const btn = document.getElementById('btn-atualizar');
+  if (btn) { btn.textContent = '⏳ Atualizando...'; btn.disabled = true; }
+  await loadDB();
+  updateBadges(); updateBadgeCobranca(); updateBadgeDiretor();
+  // Re-renderiza tela atual
+  const tela = document.querySelector('.screen.active')?.id?.replace('screen-','');
+  if (tela) {
+    const renders = {
+      dashboard: renderDashboard, produtos: renderProdutos, orcamentos: () => { populateOrcSelects(); renderOrcamentos(); },
+      aguardando: renderAguardando, diretor: renderDiretor, instalacao: renderInstalacao,
+      concluidos: renderConcluidos, cobranca: renderCobranca, reprovados: renderReprovados,
+      calendario: renderCalendario, tecnicos: renderTecnicos
+    };
+    if (renders[tela]) renders[tela]();
+  }
+  if (btn) { btn.textContent = '✅ Atualizado!'; setTimeout(() => { btn.textContent = '🔄 Atualizar'; btn.disabled = false; }, 1500); }
+}
+
+function registrarUltimoAcesso() {
+  if (!usuarioLogado) return;
+  const key = 'ultimo_acesso_' + usuarioLogado.login;
+  const anterior = localStorage.getItem(key);
+  const agora = new Date().toLocaleString('pt-BR');
+  localStorage.setItem(key, agora);
+  const el = document.getElementById('ultimo-acesso');
+  if (el) {
+    el.innerHTML = anterior
+      ? `🕐 Último acesso:<br>${anterior}`
+      : '🕐 Primeiro acesso';
+  }
+}
+
+function atualizarInfoLogado() {
+  if (!usuarioLogado) return;
+  const perfis = {admin:'Admin',orcamentista:'Orçamentista',tecnico1:'Técnico 1',tecnico2:'Técnico 2',tecnico3:'Técnico 3',financeiro:'Financeiro',atendimento:'Atendimento'};
+  const perfilLabel = perfis[usuarioLogado.perfil] || usuarioLogado.perfil;
+  document.querySelector('.user-info').innerHTML = `${usuarioLogado.nome}<span>${perfilLabel} · ${usuarioLogado.login}</span>`;
+  
+  registrarUltimoAcesso();
 }
 
 function abrirModalNovoOrc() {
