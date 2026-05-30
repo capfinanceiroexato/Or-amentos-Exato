@@ -455,7 +455,7 @@ tr:hover td{background:#FAFBFD;}
       </div>
       <div class="table-wrap">
         <div class="table-header"><h3>⏳ Aguardando Retorno do Cliente</h3></div>
-        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Enviado em</th><th>Status Follow-up</th><th>Ações</th></tr></thead><tbody id="tbl-aguardando"></tbody></table></div>
+        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Enviado em</th><th>Aguardando há</th><th>Status Follow-up</th><th>Ações</th></tr></thead><tbody id="tbl-aguardando"></tbody></table></div>
       </div>
     </div>
 
@@ -1257,10 +1257,18 @@ function renderAguardando() {
     const cli = db.clientes.find(c => c.id === o.clienteId);
     const prod = db.produtos.find(p => p.id === o.produtoId);
     const fu = o.followup || '';
-    return `<tr><td><strong>ORC-${String(o._num).padStart(3,'0')}</strong></td><td>${cli?.nome||'-'}</td><td>${prod?.nome||'-'}</td><td>${fmtVal(o.valor)}</td><td>${fmtDate(o.dtEntrada)}</td>
+    const diasAg = calcLeadTime(o.dtEnvioCliente || o.dtEntrada, null);
+    const agBadge = diasAg >= 10
+      ? `<span class="lt-badge lt-over" style="animation:pisca .8s infinite alternate;">🔴 ${diasAg}d</span>`
+      : diasAg >= 5
+        ? `<span class="lt-badge lt-warn">⏳ ${diasAg}d</span>`
+        : `<span class="lt-badge lt-ok">🟢 ${diasAg}d</span>`;
+    const trStyle = diasAg >= 10 ? ' style="background:#fff5f5;"' : '';
+    return `<tr${trStyle}><td><strong>ORC-${String(o._num).padStart(3,'0')}</strong></td><td>${cli?.nome||'-'}</td><td>${prod?.nome||'-'}</td><td>${fmtVal(o.valor)}</td><td>${fmtDate(o.dtEnvioCliente||o.dtEntrada)}</td>
+    <td>${agBadge}</td>
     <td><span class="badge ${fuBadges[fu]}">${fuLabels[fu]}</span></td>
     <td class="td-actions"><button class="btn btn-primary btn-sm" onclick="openFollowup('${o.id}')">📞 Atualizar</button><button class="btn btn-secondary btn-sm" onclick="abrirEditarOrc('${o.id}')">✏️</button><button class="btn btn-sm" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" onclick="abrirReverter('${o.id}','aguardando')">↩️</button><button class="btn-bell btn-sm" onclick="abrirLembreteOrc('${o.id}')" title="Criar lembrete">🔔</button></td></tr>`;
-  }).join('') : '<tr><td colspan="7"><div class="empty-state"><div class="ei">⏳</div><p>Nenhum orçamento aguardando retorno</p></div></td></tr>';
+  }).join('') : '<tr><td colspan="8"><div class="empty-state"><div class="ei">⏳</div><p>Nenhum orçamento aguardando retorno</p></div></td></tr>';
 }
 
 // FOLLOW-UP MODAL
