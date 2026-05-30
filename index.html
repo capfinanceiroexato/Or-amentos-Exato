@@ -471,7 +471,7 @@ tr:hover td{background:#FAFBFD;}
       </div>
       <div class="table-wrap">
         <div class="table-header"><h3>🏗️ Projetos em Instalação</h3></div>
-        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Início</th><th>Previsão</th><th>Lead Time</th><th>Cronômetro</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbl-instalacao"></tbody></table></div>
+        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Início</th><th>Previsão</th><th>Lead Time</th><th style="min-width:170px;">⏱ Cronômetro</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbl-instalacao"></tbody></table></div>
       </div>
     </div>
 
@@ -1314,20 +1314,42 @@ function renderInstalacao() {
     const cli = db.clientes.find(c => c.id === o.clienteId);
     const prod = db.produtos.find(p => p.id === o.produtoId);
     const days = calcLeadTime(o.dtInstalacaoInicio, o.dtInstalacaoConclusao);
-    const btnCronoInst = o.cronoAtivo
-      ? `<button class="btn-crono ativo btn-sm" onclick="pararCrono('${o.id}')">⏹ Parar</button>`
-      : `<button class="btn-crono btn-sm" onclick="abrirModalCrono('${o.id}','inst')">⏱ Iniciar</button>`;
-    return `<tr><td><strong>ORC-${String(o._num).padStart(3,'0')}</strong></td><td>${cli?.nome||'-'}</td><td>${prod?.nome||'-'}</td><td>${fmtVal(o.valor)}</td>
-    <td>${fmtDate(o.dtInstalacaoInicio)}</td><td>${fmtDate(o.dtInstalacaoConclusao)||'—'}</td><td>${ltBadge(days)}</td>
-    <td><div id="crono-cell-${o.id}">${cronoDisplay(o)}</div></td>
-    <td><span class="badge badge-orange">Em andamento</span></td>
-    <td class="td-actions">
-      ${btnCronoInst}
-      <button class="btn btn-success btn-sm" onclick="openInstModal('${o.id}')">▶ Avançar</button>
-      <button class="btn btn-secondary btn-sm" onclick="abrirEditarOrc('${o.id}')">✏️</button>
-      <button class="btn btn-sm" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" onclick="abrirReverter('${o.id}','instalacao')">↩️ Reverter</button>
-      <button class="btn-bell btn-sm" onclick="abrirLembreteOrc('${o.id}')" title="Criar lembrete">🔔</button>
-    </td></tr>`;
+    const semPrev = !o.dtInstalacaoConclusao;
+
+    // CRONÔMETRO play/pause igual à tela de orçamentos
+    const isPlaying = o.cronoPlayAtivo;
+    const elapsed = cronoElapsed(o);
+    const cronoCelula = `<td style="min-width:170px;vertical-align:middle;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button onclick="togglePlayCrono('${o.id}')"
+          style="width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;
+          background:${isPlaying?'#B91C1C':'#15803D'};color:#fff;flex-shrink:0;transition:.15s;">
+          ${isPlaying?'⏸':'▶'}
+        </button>
+        <div id="crono-cell-${o.id}" style="font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;
+          color:${isPlaying?'#15803D':'#94a3b8'};min-width:65px;">
+          ${elapsed}
+        </div>
+      </div>
+    </td>`;
+
+    return `<tr>
+      <td><strong>ORC-${String(o._num).padStart(3,'0')}</strong></td>
+      <td>${cli?.nome||'-'}</td>
+      <td>${prod?.nome||'-'}</td>
+      <td>${fmtVal(o.valor)}</td>
+      <td>${fmtDate(o.dtInstalacaoInicio)}</td>
+      <td>${fmtDate(o.dtInstalacaoConclusao)||'<span style="color:#94a3b8;font-size:11px;">sem data</span>'}</td>
+      <td>${ltBadge(days, semPrev)}</td>
+      ${cronoCelula}
+      <td><span class="badge badge-orange">Em andamento</span></td>
+      <td class="td-actions">
+        <button class="btn btn-success btn-sm" onclick="openInstModal('${o.id}')">✅ Concluir</button>
+        <button class="btn btn-secondary btn-sm" onclick="abrirEditarOrc('${o.id}')">✏️</button>
+        <button class="btn btn-sm" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" onclick="abrirReverter('${o.id}','instalacao')">↩️</button>
+        <button class="btn-bell btn-sm" onclick="abrirLembreteOrc('${o.id}')" title="Criar lembrete">🔔</button>
+      </td>
+    </tr>`;
   }).join('') : '<tr><td colspan="9"><div class="empty-state"><div class="ei">🏗️</div><p>Nenhum projeto em instalação</p></div></td></tr>';
 }
 function openInstModal(id) {
