@@ -49,7 +49,7 @@ body{font-family:'Nunito Sans',sans-serif;background:var(--cinza-bg);color:var(-
 .user-info span{display:block;font-size:10px;opacity:.6;}
 
 /* MAIN */
-#main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;}
+#main{margin-left:var(--sidebar-w);flex:1;display:none;flex-direction:column;min-height:100vh;}
 #topbar{background:#fff;border-bottom:1px solid var(--cinza-border);padding:0 24px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
 .topbar-title{font-family:'Nunito',sans-serif;font-weight:800;font-size:18px;color:var(--azul-escuro);}
 .topbar-actions{display:flex;align-items:center;gap:10px;}
@@ -1034,6 +1034,7 @@ async function doLogin() {
       if (lembrar) { localStorage.setItem('gestao_saved_user', u); localStorage.setItem('gestao_saved_pass', p); }
       else { localStorage.removeItem('gestao_saved_user'); localStorage.removeItem('gestao_saved_pass'); }
       document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('main').style.display = 'flex';
       // Atualiza nome do usuário na sidebar
       atualizarInfoLogado();
       
@@ -1051,6 +1052,9 @@ async function doLogin() {
   btn.textContent = 'Entrar'; btn.disabled = false;
 }
 window.addEventListener('DOMContentLoaded', () => {
+  // Garantir que login está visível e main oculto
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('main').style.display = 'none';
   const su = localStorage.getItem('gestao_saved_user');
   const sp = localStorage.getItem('gestao_saved_pass');
   if (su && sp) {
@@ -1817,24 +1821,9 @@ async function delUsuario(id) {
 }
 
 // ===== ADMIN: PERMISSÕES =====
-// placeholder_perms() {
-  const perms = getPerms();
-  const grid = document.getElementById('permissoes-grid');
-  if (!grid) return;
-  grid.innerHTML = TELAS_CONFIG.map(t => `
-    <label style="display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid var(--cinza-border);border-radius:8px;padding:10px 14px;cursor:pointer;font-size:13px;">
-      <input type="checkbox" value="${t.key}" ${perms.includes(t.key)?'checked':''} style="width:16px;height:16px;accent-color:var(--azul-claro);">
-      ${t.label}
-    </label>`).join('');
-}
+// renderPermissoesGrid definida abaixo
 
-// placeholder_salvar() {
-  const checks = document.querySelectorAll('#permissoes-grid input[type=checkbox]:checked');
-  const perms = Array.from(checks).map(c => c.value);
-  localStorage.setItem('perms_vendedor', JSON.stringify(perms));
-  applyPerms();
-  toast('Permissões salvas!', 'success');
-}
+// salvarPermissoes definida abaixo
 
 // ===== TROCAR SENHA =====
 function abrirTrocarSenha() {
@@ -1870,6 +1859,7 @@ function logout() {
   if (!confirm('Deseja sair do sistema?')) return;
   usuarioLogado = null;
   document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('main').style.display = 'none';
   document.getElementById('login-user').value = '';
   document.getElementById('login-pass').value = '';
   localStorage.removeItem('gestao_saved_user');
