@@ -907,6 +907,32 @@ tr:hover td{background:#FAFBFD;}
   </div>
 </div>
 
+
+<!-- MODAL REPROVAR ORÇAMENTO -->
+<div class="modal-overlay" id="modal-reprov">
+  <div class="modal" style="max-width:480px;">
+    <button class="modal-close" onclick="closeModal('modal-reprov')">✕</button>
+    <div class="modal-title" style="color:#B91C1C;">❌ Reprovar Orçamento</div>
+    <input type="hidden" id="reprov-orc-id">
+    <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#991B1B;" id="reprov-orc-info"></div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label>Motivo da Reprovação *</label>
+      <select id="reprov-motivo" style="width:100%;border:1.5px solid var(--cinza-border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;">
+        <option value="">Selecione um motivo...</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:18px;">
+      <label>Observação</label>
+      <textarea id="reprov-obs" placeholder="Detalhe o motivo da reprovação..." rows="3"
+        style="width:100%;border:1.5px solid var(--cinza-border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-reprov')">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmarReprovacao()" style="background:#B91C1C;color:#fff;border:none;border-radius:8px;padding:10px 20px;cursor:pointer;font-weight:700;font-size:13px;font-family:inherit;">❌ Confirmar Reprovação</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL NOVO ORÇAMENTO -->
 <div class="modal-overlay" id="modal-novo-orc">
   <div class="modal" style="max-width:580px;">
@@ -3459,9 +3485,9 @@ async function mudarStatusOrc(id, novoStatus) {
   const o = db.orcamentos.find(x => x.id === id);
   if (!o) return;
   if (novoStatus === 'Reprovado') {
-    o.followup = 'Reprovado';
-    o.status = 'Reprovado';
-    o.dtReprov = new Date().toISOString().slice(0,10);
+    // Abrir modal de motivo antes de salvar
+    abrirModalReprov(id);
+    return;
   } else if (novoStatus === 'Dúvidas') {
     o.status = 'Dúvidas';
     o.dtDuvida = new Date().toISOString().slice(0,10);
@@ -3486,8 +3512,6 @@ async function mudarStatusOrc(id, novoStatus) {
   } else if (novoStatus === 'Dúvidas') {
     toast('Movido para Aguardando Diretor!', 'success');
     setTimeout(() => nav('diretor'), 800);
-  } else if (novoStatus === 'Reprovado') {
-    toast('Orçamento marcado como reprovado!', 'error');
   }
 }
 
@@ -4066,6 +4090,58 @@ function salvarPermissoes() {
   localStorage.setItem('perms_por_perfil', JSON.stringify(result));
   applyPerms();
   toast('Permissões salvas!', 'success');
+}
+
+
+function abrirModalReprov(id) {
+  const o = db.orcamentos.find(x => x.id === id);
+  if (!o) return;
+  const cli  = db.clientes.find(c => c.id === o.clienteId);
+  const prod = db.produtos.find(p => p.id === o.produtoId);
+
+  document.getElementById('reprov-orc-id').value = id;
+  document.getElementById('reprov-obs').value = '';
+  document.getElementById('reprov-orc-info').innerHTML =
+    `<strong>ORC-${String(o._num).padStart(3,'0')}</strong> — ${cli?.nome||'-'} — ${prod?.nome||'-'} — <strong>${fmtVal(o.valor)}</strong>`;
+
+  // Popular motivos
+  const sel = document.getElementById('reprov-motivo');
+  sel.innerHTML = '<option value="">Selecione um motivo...</option>' +
+    (db.motivos||[]).map(m => `<option value="${m.id}">${m.nome}</option>`).join('');
+  sel.value = o.motivoReprovId || '';
+
+  document.getElementById('modal-reprov').classList.add('open');
+}
+
+async function confirmarReprovacao() {
+  const id      = document.getElementById('reprov-orc-id').value;
+  const motivoId= document.getElementById('reprov-motivo').value;
+  const obs     = document.getElementById('reprov-obs').value.trim();
+
+  if (!motivoId) {
+    document.getElementById('reprov-motivo').style.borderColor = '#B91C1C';
+    toast('Selecione um motivo de reprovação!', 'error');
+    return;
+  }
+  document.getElementById('reprov-motivo').style.borderColor = '';
+
+  const o = db.orcamentos.find(x => x.id === id);
+  if (!o) return;
+
+  o.followup     = 'Reprovado';
+  o.status       = 'Reprovado';
+  o.dtReprov     = new Date().toISOString().slice(0,10);
+  o.motivoReprovId = motivoId;
+  o.obsReprov    = obs;
+
+  await save();
+  closeModal('modal-reprov');
+  renderOrcamentos();
+  renderAguardando();
+  renderDiretor();
+  renderReprovados();
+  updateBadges();
+  toast('Orçamento reprovado.', 'error');
 }
 
 function abrirModalNovoOrc() {
