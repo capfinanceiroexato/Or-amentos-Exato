@@ -585,24 +585,57 @@ tr:hover td{background:#FAFBFD;}
 
     <!-- COBRANÇA -->
     <div class="screen" id="screen-cobranca">
-      <div class="filters-bar">
-        <label>Cliente:</label>
+      <div class="filters-bar" style="flex-wrap:wrap;gap:10px;">
+        <label>👥 Cliente:</label>
         <select id="cobr-filter-cli" onchange="renderCobranca()"><option value="">Todos</option></select>
         <label>Status:</label>
         <select id="cobr-filter-status" onchange="renderCobranca()">
           <option value="">Todos</option>
-          <option value="Pendente">Pendente</option>
-          <option value="Pago">Pago</option>
+          <option value="Pendente">⏳ Pendente</option>
+          <option value="Pago">✅ Pago</option>
+          <option value="Vencido">⚠️ Vencido</option>
+        </select>
+        <label>Follow-up:</label>
+        <select id="cobr-filter-fu" onchange="renderCobranca()">
+          <option value="">Todos</option>
+          <option value="Pendente">Não contatado</option>
+          <option value="Contatado">Contatado</option>
+          <option value="Prometeu pagar">Prometeu pagar</option>
+          <option value="Sem resposta">Sem resposta</option>
         </select>
         <label>Mês:</label>
         <select id="cobr-filter-mes" onchange="renderCobranca()"><option value="">Todos</option><option>Jan</option><option>Fev</option><option>Mar</option><option>Abr</option><option>Mai</option><option>Jun</option><option>Jul</option><option>Ago</option><option>Set</option><option>Out</option><option>Nov</option><option>Dez</option></select>
         <label>Ano:</label>
         <select id="cobr-filter-ano" onchange="renderCobranca()"></select>
       </div>
+
+      <!-- STATS CARDS -->
       <div class="stats-grid" id="cobr-stats"></div>
+
+      <!-- GRÁFICO ANUAL -->
+      <div style="background:#fff;border:1px solid var(--cinza-border);border-radius:14px;padding:20px 24px;margin:0 28px 20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:14px;color:var(--azul-escuro);">📊 Clientes Cobrados vs Pendentes — Jan a Dez</div>
+          <select id="cobr-chart-ano" onchange="renderCobranca()" style="border:1.5px solid var(--cinza-border);border-radius:7px;padding:5px 10px;font-size:12px;"></select>
+        </div>
+        <canvas id="cobr-chart" height="90"></canvas>
+        <div style="display:flex;gap:20px;margin-top:10px;justify-content:center;">
+          <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--cinza-texto);">
+            <span style="width:14px;height:14px;background:#B91C1C;border-radius:3px;display:inline-block;"></span> Pendentes
+          </span>
+          <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--cinza-texto);">
+            <span style="width:14px;height:14px;background:#15803D;border-radius:3px;display:inline-block;"></span> Cobrados/Pagos
+          </span>
+        </div>
+      </div>
+
       <div class="table-wrap">
         <div class="table-header"><h3>💰 Cobranças</h3></div>
-        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto/Serviço</th><th>Valor</th><th>Conclusão</th><th>Data Cobrança</th><th>Status</th><th>Data Pagto</th><th>Ações</th></tr></thead><tbody id="tbl-cobranca"></tbody></table></div>
+        <div class="table-scroll"><table><thead><tr>
+          <th>Código</th><th>Cliente</th><th>Produto/Serviço</th><th>Valor</th>
+          <th>Conclusão</th><th>Lead Time</th><th>Data Cobrança</th>
+          <th>Status</th><th>Follow-up</th><th>Data Pagto</th><th>Ações</th>
+        </tr></thead><tbody id="tbl-cobranca"></tbody></table></div>
       </div>
     </div>
 
@@ -619,10 +652,11 @@ tr:hover td{background:#FAFBFD;}
         </select>
         <select id="cal-filter-ano" onchange="renderCalendario()" style="border:1.5px solid var(--cinza-border);border-radius:7px;padding:6px 10px;font-size:13px;"></select>
         <button onclick="calNavMes(1)" style="background:#3CB54A;color:#fff;border:none;border-radius:7px;padding:6px 14px;font-size:18px;cursor:pointer;line-height:1;">&#8250;</button>
-        <label style="font-size:13px;color:var(--cinza-texto);">👷 Técnico:</label>
-        <select id="cal-filter-tec" onchange="renderCalendario()" style="border:1.5px solid var(--cinza-border);border-radius:7px;padding:6px 10px;font-size:13px;">
-          <option value="">Todos</option>
-        </select>
+        <div id="cal-tec-pills" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="font-size:12px;color:var(--cinza-texto);font-weight:600;">👷 Técnicos:</span>
+          <button onclick="calTodosOuNenhum(true)" style="padding:4px 10px;border-radius:20px;border:1.5px solid var(--cinza-border);background:#fff;font-size:11px;font-weight:700;cursor:pointer;color:var(--azul-escuro);">✅ Todos</button>
+          <button onclick="calTodosOuNenhum(false)" style="padding:4px 10px;border-radius:20px;border:1.5px solid var(--cinza-border);background:#fff;font-size:11px;font-weight:700;cursor:pointer;color:#B91C1C;">❌ Nenhum</button>
+        </div>
         <button onclick="calHoje()" style="background:#f0f4fa;color:var(--azul-escuro);border:1.5px solid var(--cinza-border);border-radius:7px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;">Hoje</button>
         <span id="cal-titulo" style="font-size:16px;font-weight:700;color:var(--azul-escuro);margin-left:4px;"></span>
         <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -1908,13 +1942,45 @@ function calHoje() {
   renderCalendario();
 }
 
+
+const TEC_CORES = [
+  {bg:'#DBEAFE',cor:'#1D4ED8',borda:'#93C5FD'},  // azul
+  {bg:'#D1FAE5',cor:'#065F46',borda:'#6EE7B7'},  // verde
+  {bg:'#FEF3C7',cor:'#92400E',borda:'#FCD34D'},  // amarelo
+  {bg:'#FCE7F3',cor:'#9D174D',borda:'#F9A8D4'},  // rosa
+  {bg:'#EDE9FE',cor:'#5B21B6',borda:'#C4B5FD'},  // roxo
+  {bg:'#FFEDD5',cor:'#C2410C',borda:'#FDBA74'},  // laranja
+  {bg:'#CFFAFE',cor:'#0E7490',borda:'#67E8F9'},  // ciano
+  {bg:'#F0FDF4',cor:'#166534',borda:'#86EFAC'},  // verde escuro
+];
+function getTecCor(tecId) {
+  if (!tecId || !db.tecnicos) return {bg:'#F1F5F9',cor:'#475569',borda:'#CBD5E1'};
+  const idx = db.tecnicos.findIndex(t => t.id === tecId);
+  return TEC_CORES[idx % TEC_CORES.length] || TEC_CORES[0];
+}
+// Técnicos selecionados no calendário (Set de ids)
+let calTecsSelecionados = new Set();
+function toggleCalTec(tecId) {
+  if (calTecsSelecionados.has(tecId)) calTecsSelecionados.delete(tecId);
+  else calTecsSelecionados.add(tecId);
+  renderCalendario();
+}
+function calTodosOuNenhum(todos) {
+  if (todos) db.tecnicos?.forEach(t => calTecsSelecionados.add(t.id));
+  else calTecsSelecionados.clear();
+  renderCalendario();
+}
+
 function getInstalacoesDoDia(dia, mes, ano) {
   const d = `${ano}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
   return db.orcamentos.filter(o => {
     if (!o.dtInstalacaoInicio) return false;
     const inicio = o.dtInstalacaoInicio;
     const fim = o.dtInstalacaoConclusao || o.dtConcluido || '';
-    return inicio <= d && (fim >= d || (!fim && inicio <= d));
+    if (!(inicio <= d && (fim >= d || (!fim && inicio <= d)))) return false;
+    // Filtro por técnico via checkboxes
+    if (calTecsSelecionados.size > 0 && !calTecsSelecionados.has(o.tecnicoId)) return false;
+    return true;
   });
 }
 
@@ -1922,7 +1988,8 @@ function calCorStatus(o) {
   const hoje = new Date().toISOString().slice(0,10);
   if (o.statusInstalacao === 'Concluído') return {bg:'#22c55e22',cor:'#16a34a',borda:'#22c55e66'};
   if (o.dtInstalacaoConclusao && o.dtInstalacaoConclusao < hoje) return {bg:'#f9731622',cor:'#ea580c',borda:'#f9731666'};
-  return {bg:'#1E90FF22',cor:'#1E90FF',borda:'#1E90FF55'};
+  // Usar cor do técnico quando em andamento
+  return getTecCor(o.tecnicoId);
 }
 
 function renderCalendario() {
@@ -1933,6 +2000,28 @@ function renderCalendario() {
 
   const titulo = document.getElementById('cal-titulo');
   if (titulo) titulo.textContent = `${MESES_NOMES[calMes-1]} ${calAno}`;
+
+  // Renderizar pills de técnicos com checkboxes coloridas
+  const pillsDiv = document.getElementById('cal-tec-pills');
+  if (pillsDiv && db.tecnicos) {
+    const btns = pillsDiv.querySelectorAll('.tec-pill');
+    // Remover pills antigas (não os botões fixos)
+    pillsDiv.querySelectorAll('.tec-pill').forEach(e => e.remove());
+    db.tecnicos.forEach((t, idx) => {
+      const cor = TEC_CORES[idx % TEC_CORES.length];
+      const ativo = calTecsSelecionados.size === 0 || calTecsSelecionados.has(t.id);
+      const pill = document.createElement('button');
+      pill.className = 'tec-pill';
+      pill.onclick = () => toggleCalTec(t.id);
+      pill.title = ativo ? 'Clique para ocultar' : 'Clique para mostrar';
+      pill.style.cssText = `padding:4px 12px;border-radius:20px;border:2px solid ${cor.borda};
+        background:${ativo ? cor.bg : '#F1F5F9'};color:${ativo ? cor.cor : '#94a3b8'};
+        font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;
+        transition:.15s;text-decoration:${ativo?'none':'line-through'};`;
+      pill.innerHTML = `<span style="width:8px;height:8px;border-radius:50%;background:${ativo?cor.cor:'#CBD5E1'};display:inline-block;"></span>${t.nome}`;
+      pillsDiv.appendChild(pill);
+    });
+  }
 
   const grid = document.getElementById('cal-grid');
   const lista = document.getElementById('cal-lista');
@@ -1995,15 +2084,11 @@ function renderCalendario() {
     if (!o.dtInstalacaoInicio) return false;
     const mesAnoInicio = o.dtInstalacaoInicio.slice(0,7);
     const mesAnoFim = o.dtInstalacaoConclusao ? o.dtInstalacaoConclusao.slice(0,7) : mesAnoInicio;
-    // Popular select de técnicos no calendário
-  const calTecSel = document.getElementById('cal-filter-tec');
-  if (calTecSel && db.tecnicos) {
-    const cur = calTecSel.value;
-    calTecSel.innerHTML = '<option value="">Todos</option>' + db.tecnicos.map(t=>`<option value="${t.id}" ${cur===t.id?'selected':''}>${t.nome}</option>`).join('');
-  }
-  const calFiltroTec = calTecSel?.value || '';
-  const alvo = `${calAno}-${String(calMes).padStart(2,'0')}`;
-    return mesAnoInicio <= alvo && mesAnoFim >= alvo;
+    const alvo = `${calAno}-${String(calMes).padStart(2,'0')}`;
+    if (!(mesAnoInicio <= alvo && mesAnoFim >= alvo)) return false;
+    // Filtro por técnicos selecionados
+    if (calTecsSelecionados.size > 0 && !calTecsSelecionados.has(o.tecnicoId)) return false;
+    return true;
   });
 
   if (todasInstalacoes.length === 0) {
@@ -2018,14 +2103,18 @@ function renderCalendario() {
     const prod = db.produtos.find(p => p.id === o.produtoId);
     const cor = calCorStatus(o);
     const status = o.statusInstalacao === 'Concluído' ? 'Concluído' : (o.dtInstalacaoConclusao && o.dtInstalacaoConclusao < hojeStr ? 'Atrasado' : 'Em Andamento');
-    listaHtml += `<div style="background:#fff;border-radius:10px;padding:14px 16px;border:1.5px solid ${cor.borda};box-shadow:0 1px 6px #0001;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+    const tec = db.tecnicos?.find(t => t.id === o.tecnicoId);
+    const tecCor = getTecCor(o.tecnicoId);
+    listaHtml += `<div style="background:#fff;border-radius:10px;padding:14px 16px;border:2px solid ${tecCor.borda};box-shadow:0 1px 6px #0001;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <span style="font-weight:700;font-size:13px;color:var(--azul-escuro);">ORC-${String(o._num).padStart(3,'0')}</span>
         <span style="background:${cor.bg};color:${cor.cor};border:1px solid ${cor.borda};border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;">${status}</span>
       </div>
       <div style="font-size:13px;color:var(--texto);font-weight:600;margin-bottom:3px;">👤 ${cli?.nome||'-'}</div>
       <div style="font-size:12px;color:var(--cinza-texto);margin-bottom:3px;">📦 ${prod?.nome||'-'}</div>
-      <div style="font-size:12px;color:var(--cinza-texto);">📅 Início: ${fmtDate(o.dtInstalacaoInicio)} ${o.dtInstalacaoConclusao?'→ Prev: '+fmtDate(o.dtInstalacaoConclusao):''}</div>
+      ${tec ? `<div style="display:inline-flex;align-items:center;gap:5px;background:${tecCor.bg};color:${tecCor.cor};border:1px solid ${tecCor.borda};border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;margin-bottom:4px;">
+        <span style="width:7px;height:7px;border-radius:50%;background:${tecCor.cor};display:inline-block;"></span>👷 ${tec.nome}</div>` : ''}
+      <div style="font-size:12px;color:var(--cinza-texto);margin-top:4px;">📅 Início: ${fmtDate(o.dtInstalacaoInicio)} ${o.dtInstalacaoConclusao?'→ Prev: '+fmtDate(o.dtInstalacaoConclusao):''}</div>
     </div>`;
   });
   listaHtml += '</div>';
@@ -2207,53 +2296,207 @@ function renderDashboard() {
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 // ===== COBRANÇA =====
+let _cobrChart = null;
 function renderCobranca() {
   const cliF    = document.getElementById('cobr-filter-cli')?.value || '';
   const statusF = document.getElementById('cobr-filter-status')?.value || '';
+  const fuF     = document.getElementById('cobr-filter-fu')?.value || '';
   const mesF    = document.getElementById('cobr-filter-mes')?.value || '';
   const anoF    = document.getElementById('cobr-filter-ano')?.value || '';
 
-  let list = db.orcamentos.filter(o => o.statusInstalacao === 'Concluído');
-  if (cliF)    list = list.filter(o => o.clienteId === cliF);
-  if (mesF)    list = list.filter(o => mesFromDate(o.dtEntrada) === mesF);
-  if (anoF)    list = list.filter(o => anoFromDate(o.dtEntrada) === anoF);
-  if (statusF) list = list.filter(o => (o.statusCobranca || 'Pendente') === statusF);
+  // Popular select do ano do gráfico
+  const chartAnoSel = document.getElementById('cobr-chart-ano');
+  if (chartAnoSel && chartAnoSel.options.length <= 1) {
+    const anos = [...new Set(db.orcamentos.map(o => anoFromDate(o.dtConcluido||o.dtInstalacaoConclusao)).filter(Boolean))].sort();
+    const curAno = new Date().getFullYear().toString();
+    chartAnoSel.innerHTML = anos.map(a => `<option value="${a}" ${a===curAno?'selected':''}>${a}</option>`).join('');
+    if (!anos.length) chartAnoSel.innerHTML = `<option value="${curAno}">${curAno}</option>`;
+  }
+  const chartAno = chartAnoSel?.value || new Date().getFullYear().toString();
 
-  const totalPendente = list.filter(o => (o.statusCobranca||'Pendente') === 'Pendente').reduce((a,o) => a + (o.valorCobrar||o.valor||0), 0);
-  const totalPago     = list.filter(o => o.statusCobranca === 'Pago').reduce((a,o) => a + (o.valorCobrar||o.valor||0), 0);
-  const qtdPendente   = list.filter(o => (o.statusCobranca||'Pendente') === 'Pendente').length;
+  // Lista base: todos concluídos
+  let listBase = db.orcamentos.filter(o => o.statusInstalacao === 'Concluído');
+
+  // Calcular status real para cada item
+  listBase = listBase.map(o => {
+    const dtCob = o.dtCobranca;
+    const isVencido = !o.statusCobranca || (o.statusCobranca === 'Pendente' && dtCob && new Date(dtCob) < new Date());
+    return { ...o, _statusReal: o.statusCobranca === 'Pago' ? 'Pago' : isVencido ? 'Vencido' : 'Pendente' };
+  });
+
+  // Filtros
+  let list = [...listBase];
+  if (cliF)    list = list.filter(o => o.clienteId === cliF);
+  if (mesF)    list = list.filter(o => mesFromDate(o.dtConcluido||o.dtInstalacaoConclusao) === mesF);
+  if (anoF)    list = list.filter(o => anoFromDate(o.dtConcluido||o.dtInstalacaoConclusao) === anoF);
+  if (statusF) list = list.filter(o => o._statusReal === statusF);
+  if (fuF)     list = list.filter(o => (o.followupCobranca||'Pendente') === fuF);
+
+  // Stats
+  const qtdPendente  = list.filter(o => o._statusReal !== 'Pago').length;
+  const qtdPago      = list.filter(o => o._statusReal === 'Pago').length;
+  const totalPendente = list.filter(o => o._statusReal !== 'Pago').reduce((a,o) => a + (o.valorCobrar||o.valor||0), 0);
+  const totalPago     = list.filter(o => o._statusReal === 'Pago').reduce((a,o) => a + (o.valorCobrar||o.valor||0), 0);
+  const qtdVencido   = list.filter(o => o._statusReal === 'Vencido').length;
 
   document.getElementById('cobr-stats').innerHTML = `
-    <div class="stat-card"><div class="sc-icon" style="background:var(--laranja-bg)">⏳</div><div class="sc-label">Pendentes</div><div class="sc-value">${qtdPendente}</div><div class="sc-sub">${fmtVal(totalPendente)}</div></div>
-    <div class="stat-card"><div class="sc-icon" style="background:var(--verde-bg)">✅</div><div class="sc-label">Recebido</div><div class="sc-value" style="font-size:18px;">${fmtVal(totalPago)}</div></div>
-    <div class="stat-card"><div class="sc-icon" style="background:var(--azul-bg)">💰</div><div class="sc-label">Total Geral</div><div class="sc-value" style="font-size:18px;">${fmtVal(totalPendente+totalPago)}</div></div>`;
+    <div class="stat-card"><div class="sc-icon" style="background:#FEE2E2">⚠️</div>
+      <div class="sc-label">Clientes em Aberto</div>
+      <div class="sc-value" style="color:#B91C1C;">${qtdPendente}</div>
+      <div class="sc-sub">${fmtVal(totalPendente)}</div></div>
+    <div class="stat-card"><div class="sc-icon" style="background:#F0FDF4">✅</div>
+      <div class="sc-label">Clientes Cobrados/Pagos</div>
+      <div class="sc-value" style="color:#15803D;">${qtdPago}</div>
+      <div class="sc-sub">${fmtVal(totalPago)}</div></div>
+    <div class="stat-card"><div class="sc-icon" style="background:#FEF3C7">⏳</div>
+      <div class="sc-label">Vencidos</div>
+      <div class="sc-value" style="color:#B45309;">${qtdVencido}</div></div>
+    <div class="stat-card"><div class="sc-icon" style="background:var(--azul-bg)">💰</div>
+      <div class="sc-label">Total Geral</div>
+      <div class="sc-value" style="font-size:16px;">${fmtVal(totalPendente+totalPago)}</div></div>`;
+
+  // GRÁFICO JAN-DEZ vinculado ao ano selecionado e filtros de cliente/produto
+  const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  let baseGrafico = listBase.filter(o => anoFromDate(o.dtConcluido||o.dtInstalacaoConclusao) === chartAno);
+  if (cliF) baseGrafico = baseGrafico.filter(o => o.clienteId === cliF);
+
+  const dadosPend = meses.map((_,i) => {
+    const m = String(i+1).padStart(2,'0');
+    return baseGrafico.filter(o => {
+      const d = o.dtConcluido||o.dtInstalacaoConclusao||'';
+      return d.slice(5,7) === m && o._statusReal !== 'Pago';
+    }).length;
+  });
+  const dadosPago = meses.map((_,i) => {
+    const m = String(i+1).padStart(2,'0');
+    return baseGrafico.filter(o => {
+      const d = o.dtConcluido||o.dtInstalacaoConclusao||'';
+      return d.slice(5,7) === m && o._statusReal === 'Pago';
+    }).length;
+  });
+
+  // Renderizar gráfico de barras puro SVG (sem lib externa)
+  renderCobrChart(meses, dadosPend, dadosPago);
+
+  // TABELA
+  const fuLabels = {'Pendente':'Não contatado','Contatado':'📞 Contatado','Prometeu pagar':'🤝 Prometeu pagar','Sem resposta':'📵 Sem resposta'};
+  const fuColors = {'Pendente':['#F1F5F9','#475569'],'Contatado':['#EFF6FF','#1D4ED8'],'Prometeu pagar':['#F0FDF4','#15803D'],'Sem resposta':['#FEE2E2','#B91C1C']};
 
   document.getElementById('tbl-cobranca').innerHTML = list.length ? list.map(o => {
     const cli  = db.clientes.find(c => c.id === o.clienteId);
     const prod = db.produtos.find(p => p.id === o.produtoId);
-    const status = o.statusCobranca || 'Pendente';
-    const isPago = status === 'Pago';
+    const isPago = o._statusReal === 'Pago';
+    const isVenc = o._statusReal === 'Vencido';
+
     const stBadge = isPago
       ? `<span class="badge badge-green">✅ Pago</span>`
-      : (o.dtCobranca && new Date(o.dtCobranca) < new Date()
-          ? `<span class="badge badge-red">⚠️ Vencido</span>`
-          : `<span class="badge badge-orange">⏳ Pendente</span>`);
+      : isVenc
+        ? `<span class="badge badge-red">⚠️ Vencido</span>`
+        : `<span class="badge badge-orange">⏳ Pendente</span>`;
+
+    // Lead time: da conclusão até hoje (ou até pagamento)
+    const dtFim = o.dtConcluido||o.dtInstalacaoConclusao;
+    const ltDays = calcLeadTime(dtFim, isPago ? o.dtPagamento : null);
+    const ltB = ltDays > 30
+      ? `<span class="lt-badge lt-over">🔴 ${ltDays}d</span>`
+      : ltDays > 15
+        ? `<span class="lt-badge lt-warn">⏳ ${ltDays}d</span>`
+        : `<span class="lt-badge lt-ok">🟢 ${ltDays}d</span>`;
+
+    // Follow-up select
+    const fuVal = o.followupCobranca || 'Pendente';
+    const fuCol = fuColors[fuVal] || fuColors['Pendente'];
+    const fuSelect = isPago ? `<span style="font-size:12px;color:#15803D;">—</span>` :
+      `<select onchange="salvarFollowupCobranca('${o.id}',this.value)"
+        style="border:1.5px solid var(--cinza-border);border-radius:7px;padding:3px 6px;font-size:11px;font-weight:600;cursor:pointer;background:${fuCol[0]};color:${fuCol[1]};">
+        <option value="Pendente" ${fuVal==='Pendente'?'selected':''}>Não contatado</option>
+        <option value="Contatado" ${fuVal==='Contatado'?'selected':''}>📞 Contatado</option>
+        <option value="Prometeu pagar" ${fuVal==='Prometeu pagar'?'selected':''}>🤝 Prometeu</option>
+        <option value="Sem resposta" ${fuVal==='Sem resposta'?'selected':''}>📵 Sem resposta</option>
+      </select>`;
+
     const acoes = isPago
       ? `<span style="font-size:12px;color:var(--verde);font-weight:700;">✅ Recebido</span>`
       : `<button class="btn btn-primary btn-sm" onclick="openCobrancaModal('${o.id}')">✏️ Editar</button>
          <button class="btn btn-success btn-sm" onclick="openPagarModal('${o.id}')">💵 Pago</button>`;
-    return `<tr class="${isPago?'cobr-pago':''}">
+
+    const trStyle = isVenc ? ' style="background:#fff5f5;"' : isPago ? ' style="background:#f0fdf4;"' : '';
+    return `<tr${trStyle}>
       <td><strong>ORC-${String(o._num).padStart(3,'0')}</strong></td>
       <td>${cli?.nome||'-'}</td>
       <td>${prod?.nome||'-'}</td>
       <td class="cobr-valor-destaque">${fmtVal(o.valorCobrar||o.valor)}</td>
-      <td>${fmtDate(o.dtConcluido||o.dtInstalacaoConclusao)}</td>
-      <td>${o.dtCobranca ? fmtDate(o.dtCobranca) : '<span style="color:var(--cinza-texto)">Não definida</span>'}</td>
+      <td>${fmtDate(dtFim)}</td>
+      <td>${ltB}</td>
+      <td>${o.dtCobranca ? fmtDate(o.dtCobranca) : '<span style="color:var(--cinza-texto);font-size:11px;">Não definida</span>'}</td>
       <td>${stBadge}</td>
+      <td>${fuSelect}</td>
       <td>${o.dtPagamento ? fmtDate(o.dtPagamento) : '—'}</td>
       <td class="td-actions">${acoes}</td>
     </tr>`;
-  }).join('') : '<tr><td colspan="9"><div class="empty-state"><div class="ei">💰</div><p>Nenhuma cobrança encontrada</p></div></td></tr>';
+  }).join('') : '<tr><td colspan="11"><div class="empty-state"><div class="ei">💰</div><p>Nenhuma cobrança encontrada</p></div></td></tr>';
+}
+
+// Gráfico SVG de barras agrupadas
+function renderCobrChart(meses, pend, pago) {
+  const canvas = document.getElementById('cobr-chart');
+  if (!canvas) return;
+  const W = canvas.parentElement.offsetWidth - 48 || 800;
+  const H = 160;
+  const padL = 36, padB = 28, padT = 10, padR = 10;
+  const gW = W - padL - padR;
+  const gH = H - padB - padT;
+  const maxVal = Math.max(...pend, ...pago, 1);
+  const bW = (gW / 12) * 0.38;
+  const gap = (gW / 12) * 0.12;
+
+  let bars = '';
+  let labels = '';
+  let yAxis = '';
+
+  // Y axis
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + gH - (gH * i / 4);
+    const val = Math.round(maxVal * i / 4);
+    yAxis += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#E2E8F0" stroke-width="1"/>`;
+    yAxis += `<text x="${padL-4}" y="${y+4}" text-anchor="end" font-size="9" fill="#94a3b8">${val}</text>`;
+  }
+
+  meses.forEach((m, i) => {
+    const x0 = padL + (gW / 12) * i + gap;
+    const hPend = pend[i] > 0 ? (pend[i] / maxVal) * gH : 0;
+    const hPago = pago[i] > 0 ? (pago[i] / maxVal) * gH : 0;
+    const yPend = padT + gH - hPend;
+    const yPago = padT + gH - hPago;
+
+    // Barra pendente
+    bars += `<rect x="${x0}" y="${yPend}" width="${bW}" height="${hPend}" fill="#B91C1C" rx="2" opacity="0.85">
+      <title>${m}: ${pend[i]} pendente(s)</title></rect>`;
+    if (pend[i] > 0) bars += `<text x="${x0+bW/2}" y="${yPend-3}" text-anchor="middle" font-size="9" fill="#B91C1C" font-weight="bold">${pend[i]}</text>`;
+
+    // Barra pago
+    bars += `<rect x="${x0+bW+2}" y="${yPago}" width="${bW}" height="${hPago}" fill="#15803D" rx="2" opacity="0.85">
+      <title>${m}: ${pago[i]} cobrado(s)</title></rect>`;
+    if (pago[i] > 0) bars += `<text x="${x0+bW+2+bW/2}" y="${yPago-3}" text-anchor="middle" font-size="9" fill="#15803D" font-weight="bold">${pago[i]}</text>`;
+
+    // Label mês
+    labels += `<text x="${x0+bW}" y="${H-6}" text-anchor="middle" font-size="10" fill="#64748b">${m}</text>`;
+  });
+
+  // Linha base
+  yAxis += `<line x1="${padL}" y1="${padT+gH}" x2="${W-padR}" y2="${padT+gH}" stroke="#CBD5E1" stroke-width="1.5"/>`;
+
+  canvas.outerHTML = `<svg id="cobr-chart" width="${W}" height="${H}" style="width:100%;overflow:visible;">
+    ${yAxis}${bars}${labels}
+  </svg>`;
+}
+
+async function salvarFollowupCobranca(id, valor) {
+  const o = db.orcamentos.find(x => x.id === id);
+  if (!o) return;
+  o.followupCobranca = valor;
+  await save();
+  toast('Follow-up atualizado!', 'success');
 }
 
 function openCobrancaModal(orcId) {
