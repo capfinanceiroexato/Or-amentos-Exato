@@ -655,11 +655,50 @@ tr:hover td{background:#FAFBFD;}
     </div>
 
 
+
+<!-- MODAL LOG CRONÔMETRO -->
+<div class="modal-overlay" id="modal-log-crono">
+  <div class="modal" style="max-width:580px;">
+    <button class="modal-close" onclick="closeModal('modal-log-crono')">✕</button>
+    <div class="modal-title">⏱ Histórico de Sessões — <span id="log-crono-codigo"></span></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:12px 16px;background:#F0FDF4;border-radius:10px;border:1px solid #BBF7D0;">
+      <span style="font-size:22px;">🕐</span>
+      <div>
+        <div style="font-size:11px;color:#15803D;font-weight:600;">TEMPO TOTAL TRABALHADO</div>
+        <div id="log-crono-total" style="font-size:24px;font-weight:800;font-family:'Nunito',sans-serif;color:#15803D;letter-spacing:.05em;">00:00:00</div>
+      </div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead>
+        <tr style="background:#F8FAFC;border-bottom:2px solid var(--cinza-border);">
+          <th style="padding:8px 10px;text-align:left;color:var(--cinza-texto);font-size:11px;">#</th>
+          <th style="padding:8px 10px;text-align:left;color:var(--cinza-texto);font-size:11px;">▶ INÍCIO</th>
+          <th style="padding:8px 10px;text-align:left;color:var(--cinza-texto);font-size:11px;">⏸ FIM</th>
+          <th style="padding:8px 10px;text-align:left;color:var(--cinza-texto);font-size:11px;">⏱ DURAÇÃO</th>
+        </tr>
+      </thead>
+      <tbody id="log-crono-rows"></tbody>
+    </table>
+    <div class="form-actions" style="margin-top:16px;">
+      <button class="btn btn-secondary" onclick="closeModal('modal-log-crono')">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL NOVO ORÇAMENTO -->
 <div class="modal-overlay" id="modal-novo-orc">
   <div class="modal" style="max-width:580px;">
     <button class="modal-close" onclick="closeModal('modal-novo-orc')">✕</button>
     <div class="modal-title">📝 Novo Orçamento</div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label style="font-weight:700;color:var(--azul-escuro);">Número do Orçamento</label>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:16px;font-weight:800;color:var(--azul-escuro);font-family:'Nunito',sans-serif;white-space:nowrap;">ORC-</span>
+        <input type="number" id="orc-num-manual" placeholder="Ex: 42" min="1"
+          style="width:120px;border:2px solid var(--azul-escuro);border-radius:8px;padding:8px 12px;font-size:16px;font-weight:800;font-family:'Nunito',sans-serif;color:var(--azul-escuro);">
+        <span style="font-size:12px;color:var(--cinza-texto);">Deixe vazio para usar o próximo automático (<strong id="orc-num-preview"></strong>)</span>
+      </div>
+    </div>
     <div class="form-grid" style="margin-bottom:14px;">
       <div class="form-group"><label>Cliente / Fornecedor *</label><select id="orc-cliente" style="width:100%;border:1.5px solid var(--cinza-border);border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;"></select></div>
       <div class="form-group"><label>Produto *</label><select id="orc-produto" style="width:100%;border:1.5px solid var(--cinza-border);border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;"></select></div>
@@ -1154,7 +1193,7 @@ function fmtVal(v) { return 'R$ ' + (v||0).toLocaleString('pt-BR', {minimumFract
 function mesFromDate(d) { const meses=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']; return d ? meses[parseInt(d.split('-')[1])-1] : ''; }
 function anoFromDate(d) { return d ? d.split('-')[0] : ''; }
 
-function clearOrc() { ['orc-cliente','orc-produto','orc-subproduto','orc-status'].forEach(id => document.getElementById(id).selectedIndex=0); ['orc-valor','orc-dt-entrada','orc-dt-conclusao','orc-obs'].forEach(id => document.getElementById(id).value=''); document.getElementById('orc-dt-entrada').value = new Date().toISOString().slice(0,10); }
+function clearOrc() { ['orc-cliente','orc-produto','orc-subproduto','orc-status'].forEach(id => document.getElementById(id).selectedIndex=0); ['orc-valor','orc-dt-entrada','orc-dt-conclusao','orc-obs','orc-num-manual'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; }); document.getElementById('orc-dt-entrada').value = new Date().toISOString().slice(0,10); }
 
 async function salvarOrcamento() {
   const cliId = document.getElementById('orc-cliente').value;
@@ -1162,8 +1201,11 @@ async function salvarOrcamento() {
   const valor = parseFloat(document.getElementById('orc-valor').value) || 0;
   const dtEntrada = document.getElementById('orc-dt-entrada').value;
   if (!cliId || !prodId || !dtEntrada) return toast('Preencha cliente, produto e data de entrada', 'error');
+  const numManual = parseInt(document.getElementById('orc-num-manual')?.value);
+  const numFinal = numManual > 0 ? numManual : orcCounter++;
+  if (numManual > 0 && numManual >= orcCounter) orcCounter = numManual + 1;
   const orc = {
-    id: uid(), _num: orcCounter++,
+    id: uid(), _num: numFinal,
     clienteId: cliId, produtoId: prodId,
     subprodutoId: document.getElementById('orc-subproduto').value,
     valor, dtEntrada,
@@ -1213,20 +1255,24 @@ function renderOrcamentos() {
       <option value="Reprovado" ${o.status==='Reprovado'?'selected':''}>❌ Reprovado</option>
     </select>`;
 
-    // CRONÔMETRO — play/pause contando do zero
+    // CRONÔMETRO — play/pause com log de sessões
     const isPlaying = o.cronoPlayAtivo;
     const elapsed = cronoElapsed(o);
-    const cronoCelula = `<td style="min-width:170px;vertical-align:middle;">
-      <div style="display:flex;align-items:center;gap:6px;">
+    const temSessoes = (o.cronoSessoes && o.cronoSessoes.length > 0) || o.cronoPlayAtivo;
+    const cronoCelula = `<td style="min-width:190px;vertical-align:middle;">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
         <button onclick="togglePlayCrono('${o.id}')"
           style="width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;
-          background:${isPlaying?'#B91C1C':'#15803D'};color:#fff;flex-shrink:0;transition:.15s;">
+          background:${isPlaying?'#B91C1C':'#15803D'};color:#fff;flex-shrink:0;transition:.15s;" title="${isPlaying?'Pausar':'Iniciar'}">
           ${isPlaying?'⏸':'▶'}
         </button>
         <div id="crono-cell-${o.id}" style="font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;
-          color:${isPlaying?'#15803D':'#94a3b8'};min-width:60px;">
+          color:${isPlaying?'#15803D':temSessoes?'#1B3A6B':'#94a3b8'};min-width:65px;">
           ${elapsed}
         </div>
+        ${temSessoes ? `<button onclick="abrirLogCrono('${o.id}')" title="Ver histórico de sessões"
+          style="width:24px;height:24px;border-radius:6px;border:1px solid #CBD5E1;background:#F8FAFC;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;">
+          📋</button>` : ''}
       </div>
     </td>`;
 
@@ -1323,20 +1369,24 @@ function renderInstalacao() {
     const days = calcLeadTime(o.dtInstalacaoInicio, o.dtInstalacaoConclusao);
     const semPrev = !o.dtInstalacaoConclusao;
 
-    // CRONÔMETRO play/pause igual à tela de orçamentos
+    // CRONÔMETRO play/pause com log de sessões
     const isPlaying = o.cronoPlayAtivo;
     const elapsed = cronoElapsed(o);
-    const cronoCelula = `<td style="min-width:170px;vertical-align:middle;">
-      <div style="display:flex;align-items:center;gap:6px;">
+    const temSessoes = (o.cronoSessoes && o.cronoSessoes.length > 0) || o.cronoPlayAtivo;
+    const cronoCelula = `<td style="min-width:190px;vertical-align:middle;">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
         <button onclick="togglePlayCrono('${o.id}')"
           style="width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;
-          background:${isPlaying?'#B91C1C':'#15803D'};color:#fff;flex-shrink:0;transition:.15s;">
+          background:${isPlaying?'#B91C1C':'#15803D'};color:#fff;flex-shrink:0;transition:.15s;" title="${isPlaying?'Pausar':'Iniciar'}">
           ${isPlaying?'⏸':'▶'}
         </button>
         <div id="crono-cell-${o.id}" style="font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;
-          color:${isPlaying?'#15803D':'#94a3b8'};min-width:65px;">
+          color:${isPlaying?'#15803D':temSessoes?'#1B3A6B':'#94a3b8'};min-width:65px;">
           ${elapsed}
         </div>
+        ${temSessoes ? `<button onclick="abrirLogCrono('${o.id}')" title="Ver histórico de sessões"
+          style="width:24px;height:24px;border-radius:6px;border:1px solid #CBD5E1;background:#F8FAFC;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;">
+          📋</button>` : ''}
       </div>
     </td>`;
 
@@ -2623,20 +2673,46 @@ async function mudarStatusOrc(id, novoStatus) {
 
 
 function cronoElapsed(o) {
-  if (!o.cronoPlayAtivo || !o.cronoPlayInicio) return '00:00:00';
-  const elapsed = Date.now() - o.cronoPlayInicio + (o.cronoPlayAcumulado || 0);
+  let elapsed = o.cronoPlayAcumulado || 0;
+  if (o.cronoPlayAtivo && o.cronoPlayInicio) {
+    elapsed += Date.now() - o.cronoPlayInicio;
+  }
+  if (elapsed === 0) return '00:00:00';
   const h = Math.floor(elapsed / 3600000);
   const m = Math.floor((elapsed % 3600000) / 60000);
   const s = Math.floor((elapsed % 60000) / 1000);
   return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
+function fmtHora(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  return d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+}
+function fmtDataHora(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+}
+function msToDuration(ms) {
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  return h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
 
 async function togglePlayCrono(id) {
   const o = db.orcamentos.find(x => x.id === id);
   if (!o) return;
+  if (!o.cronoSessoes) o.cronoSessoes = [];
   if (o.cronoPlayAtivo) {
-    // PAUSE
-    o.cronoPlayAcumulado = (o.cronoPlayAcumulado || 0) + (Date.now() - o.cronoPlayInicio);
+    // PAUSE — gravar sessão
+    const durMs = Date.now() - o.cronoPlayInicio;
+    o.cronoSessoes.push({
+      inicio: o.cronoPlayInicio,
+      fim: Date.now(),
+      durMs
+    });
+    o.cronoPlayAcumulado = (o.cronoPlayAcumulado || 0) + durMs;
     o.cronoPlayAtivo = false;
     o.cronoPlayInicio = null;
   } else {
@@ -2650,9 +2726,33 @@ async function togglePlayCrono(id) {
   iniciarCronoTicker();
 }
 
+function abrirLogCrono(id) {
+  const o = db.orcamentos.find(x => x.id === id);
+  if (!o) return;
+  const sessoes = o.cronoSessoes || [];
+  const totalAcum = cronoElapsed(o);
+  let rows = sessoes.length
+    ? sessoes.map((s, i) => `
+        <tr>
+          <td style="padding:6px 10px;font-weight:700;color:var(--azul-escuro);">#${i+1}</td>
+          <td style="padding:6px 10px;">${fmtDataHora(s.inicio)}</td>
+          <td style="padding:6px 10px;">${fmtDataHora(s.fim)}</td>
+          <td style="padding:6px 10px;font-weight:700;color:#15803D;">${msToDuration(s.durMs)}</td>
+        </tr>`).join('')
+    : `<tr><td colspan="4" style="padding:16px;text-align:center;color:#94a3b8;">Nenhuma sessão registrada ainda</td></tr>`;
+
+  document.getElementById('log-crono-codigo').textContent = 'ORC-' + String(o._num).padStart(3,'0');
+  document.getElementById('log-crono-total').textContent = totalAcum;
+  document.getElementById('log-crono-rows').innerHTML = rows;
+  document.getElementById('modal-log-crono').classList.add('open');
+}
+
 function abrirModalNovoOrc() {
   populateOrcSelects();
   clearOrc();
+  document.getElementById('orc-num-manual').value = '';
+  const preview = document.getElementById('orc-num-preview');
+  if (preview) preview.textContent = 'ORC-' + String(orcCounter).padStart(3,'0');
   document.getElementById('modal-novo-orc').classList.add('open');
 }
 
@@ -2708,8 +2808,7 @@ function cronoDisplay(o) {
 function iniciarCronoTicker() {
   if (window._cronoTicker) clearInterval(window._cronoTicker);
   window._cronoTicker = setInterval(() => {
-    const ativos = db.orcamentos.filter(o => o.cronoPlayAtivo);
-    ativos.forEach(o => {
+    db.orcamentos.filter(o => o.cronoPlayAtivo).forEach(o => {
       const el = document.getElementById('crono-cell-' + o.id);
       if (el) el.textContent = cronoElapsed(o);
     });
