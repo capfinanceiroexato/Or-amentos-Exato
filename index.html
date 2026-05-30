@@ -274,7 +274,7 @@ tr:hover td{background:#FAFBFD;}
     <div class="menu-section">Principal</div>
     <div class="menu-item active" onclick="nav('dashboard')"><span class="mi">📊</span> Dashboard</div>
     <div class="menu-section">Cadastros</div>
-    <div class="menu-item" onclick="nav('produtos')"><span class="mi">📦</span> Produtos</div>
+    <div class="menu-item" onclick="nav('produtos')"><span class="mi">📦</span> Produtos/Serviços</div>
     <div class="menu-item" onclick="nav('subprodutos')"><span class="mi">🔧</span> Subprodutos</div>
     <div class="menu-item" onclick="nav('clientes')"><span class="mi">👥</span> Clientes</div>
     <div class="menu-item" onclick="nav('motivos')"><span class="mi">📋</span> Motivos Reprovação</div>
@@ -351,14 +351,14 @@ tr:hover td{background:#FAFBFD;}
       </div>
       <div class="table-wrap">
         <div class="table-header"><h3>🕐 Orçamentos Recentes</h3></div>
-        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Status</th><th>Lead Time</th></tr></thead><tbody id="dash-recent"></tbody></table></div>
+        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto/Serviço</th><th>Valor</th><th>Status</th><th>Lead Time</th></tr></thead><tbody id="dash-recent"></tbody></table></div>
       </div>
     </div>
 
     <!-- PRODUTOS -->
     <div class="screen" id="screen-produtos">
       <div class="form-section">
-        <div class="form-section-title">Cadastro de Produto</div>
+        <div class="form-section-title">Cadastro de Produto/Serviço</div>
         <div class="form-grid">
           <div class="form-group"><label>Nome do Produto / Serviço *</label><input type="text" id="prod-nome" placeholder="Ex: Chapa de Aço Galvanizada"></div>
           <div class="form-group"><label>Tipo *</label><select id="prod-tipo"><option value="Produto">📦 Produto</option><option value="Serviço">🛠 Serviço</option></select></div>
@@ -370,7 +370,7 @@ tr:hover td{background:#FAFBFD;}
         <div class="form-actions"><button class="btn btn-secondary" onclick="clearForm('prod')">Limpar</button><button class="btn btn-primary" onclick="salvarProduto()">💾 Salvar Produto</button></div>
       </div>
       <div class="table-wrap">
-        <div class="table-header"><h3>Lista de Produtos</h3><input type="text" placeholder="🔍 Buscar..." style="border:1.5px solid var(--cinza-border);border-radius:7px;padding:6px 10px;font-size:13px;width:200px;" oninput="renderProdutos(this.value)"></div>
+        <div class="table-header"><h3>Lista de Produtos/Serviços</h3><input type="text" placeholder="🔍 Buscar..." style="border:1.5px solid var(--cinza-border);border-radius:7px;padding:6px 10px;font-size:13px;width:200px;" oninput="renderProdutos(this.value)"></div>
         <div class="table-scroll"><table><thead><tr><th>Código</th><th>Nome</th><th>Tipo</th><th>Unidade</th><th>Preço</th><th>Ações</th></tr></thead><tbody id="tbl-produtos"></tbody></table></div>
       </div>
     </div>
@@ -445,7 +445,7 @@ tr:hover td{background:#FAFBFD;}
         <div class="table-header">
           <h3>Orçamentos Lançados</h3>
         </div>
-        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Entrada</th><th>Lead Time</th><th>Status</th><th style="min-width:170px;">⏱ Cronômetro</th><th>Ações</th></tr></thead><tbody id="tbl-orcamentos"></tbody></table></div>
+        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto/Serviço</th><th>Valor</th><th>Entrada</th><th>Lead Time</th><th>Status</th><th style="min-width:170px;">⏱ Cronômetro</th><th>Ações</th></tr></thead><tbody id="tbl-orcamentos"></tbody></table></div>
       </div>
     </div>
 
@@ -461,23 +461,38 @@ tr:hover td{background:#FAFBFD;}
       </div>
       <div class="table-wrap">
         <div class="table-header"><h3>⏳ Aguardando Retorno do Cliente</h3></div>
-        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Enviado em</th><th>Aguardando há</th><th>Status Follow-up</th><th>Ações</th></tr></thead><tbody id="tbl-aguardando"></tbody></table></div>
+        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto/Serviço</th><th>Valor</th><th>Enviado em</th><th>Aguardando há</th><th>Status Follow-up</th><th>Ações</th></tr></thead><tbody id="tbl-aguardando"></tbody></table></div>
       </div>
     </div>
 
     <!-- INSTALAÇÃO -->
     <div class="screen" id="screen-instalacao">
-      <div class="filters-bar">
-        <label>Cliente:</label>
+      <div class="filters-bar" style="flex-wrap:wrap;gap:10px;">
+        <label>👷 Técnico:</label>
+        <select id="inst-filter-tec" onchange="renderInstalacao()"><option value="">Todos</option></select>
+        <label>👥 Cliente:</label>
         <select id="inst-filter-cli" onchange="renderInstalacao()"><option value="">Todos</option></select>
+        <label>📦 Produto/Serviço:</label>
+        <select id="inst-filter-prod" onchange="renderInstalacao()"><option value="">Todos</option></select>
+        <label>📅 Dia:</label>
+        <input type="number" id="inst-filter-dia" min="1" max="31" placeholder="Dia" onchange="renderInstalacao()"
+          style="width:70px;border:1.5px solid var(--cinza-border);border-radius:7px;padding:6px 8px;font-size:13px;">
         <label>Mês:</label>
         <select id="inst-filter-mes" onchange="renderInstalacao()"><option value="">Todos</option><option>Jan</option><option>Fev</option><option>Mar</option><option>Abr</option><option>Mai</option><option>Jun</option><option>Jul</option><option>Ago</option><option>Set</option><option>Out</option><option>Nov</option><option>Dez</option></select>
         <label>Ano:</label>
         <select id="inst-filter-ano" onchange="renderInstalacao()"></select>
+        <label>📆 Semana:</label>
+        <select id="inst-filter-semana" onchange="renderInstalacao()" style="border:1.5px solid var(--cinza-border);border-radius:7px;padding:6px 10px;font-size:13px;">
+          <option value="">Todas</option>
+          <option value="0">Esta semana</option>
+          <option value="1">Próxima semana</option>
+          <option value="-1">Semana passada</option>
+        </select>
+        <button onclick="limparFiltrosInst()" style="background:#f1f5f9;border:1.5px solid var(--cinza-border);border-radius:7px;padding:6px 12px;font-size:12px;cursor:pointer;color:var(--cinza-texto);">✕ Limpar filtros</button>
       </div>
       <div class="table-wrap">
         <div class="table-header"><h3>🏗️ Projetos em Instalação</h3></div>
-        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Início</th><th>Previsão</th><th>Lead Time</th><th style="min-width:190px;">⏱ Cronômetro</th><th style="min-width:160px;">👷 Técnico</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbl-instalacao"></tbody></table></div>
+        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto/Serviço</th><th>Valor</th><th>Início</th><th>Previsão</th><th>Lead Time</th><th style="min-width:190px;">⏱ Cronômetro</th><th style="min-width:160px;">👷 Técnico</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbl-instalacao"></tbody></table></div>
       </div>
     </div>
 
@@ -495,7 +510,7 @@ tr:hover td{background:#FAFBFD;}
       <div class="table-wrap">
         <div class="table-header"><h3>🎯 Aguardando Diretor</h3></div>
         <div class="table-scroll"><table><thead><tr>
-          <th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Enviado em</th><th>Aguardando há</th><th>Status</th><th style="min-width:190px;">⏱ Cronômetro</th><th>Ações</th>
+          <th>Código</th><th>Cliente</th><th>Produto/Serviço</th><th>Valor</th><th>Enviado em</th><th>Aguardando há</th><th>Status</th><th style="min-width:190px;">⏱ Cronômetro</th><th>Ações</th>
         </tr></thead><tbody id="tbl-diretor"></tbody></table></div>
       </div>
     </div>
@@ -533,7 +548,7 @@ tr:hover td{background:#FAFBFD;}
       <div class="stats-grid" id="con-stats"></div>
       <div class="table-wrap">
         <div class="table-header"><h3>✅ Projetos Concluídos</h3></div>
-        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Entrada</th><th>Enviado</th><th>Concluído</th><th>Pago em</th><th title="Entrada → Conclusão instalação">⏱ Orçamento→Conclusão</th><th title="Entrada → Pagamento">💰 Entrada→Pagamento</th><th>Ações</th></tr></thead><tbody id="tbl-concluidos"></tbody></table></div>
+        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto/Serviço</th><th>Valor</th><th>Entrada</th><th>Enviado</th><th>Concluído</th><th>Pago em</th><th title="Entrada → Conclusão instalação">⏱ Orçamento→Conclusão</th><th title="Entrada → Pagamento">💰 Entrada→Pagamento</th><th>Ações</th></tr></thead><tbody id="tbl-concluidos"></tbody></table></div>
       </div>
     </div>
 
@@ -556,7 +571,7 @@ tr:hover td{background:#FAFBFD;}
       <div class="stats-grid" id="cobr-stats"></div>
       <div class="table-wrap">
         <div class="table-header"><h3>💰 Cobranças</h3></div>
-        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Conclusão</th><th>Data Cobrança</th><th>Status</th><th>Data Pagto</th><th>Ações</th></tr></thead><tbody id="tbl-cobranca"></tbody></table></div>
+        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto/Serviço</th><th>Valor</th><th>Conclusão</th><th>Data Cobrança</th><th>Status</th><th>Data Pagto</th><th>Ações</th></tr></thead><tbody id="tbl-cobranca"></tbody></table></div>
       </div>
     </div>
 
@@ -651,7 +666,7 @@ tr:hover td{background:#FAFBFD;}
       </div>
       <div class="table-wrap">
         <div class="table-header"><h3>❌ Orçamentos Reprovados</h3></div>
-        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto</th><th>Valor</th><th>Reprovado em</th><th>Motivo</th><th>Observação</th><th>Ações</th></tr></thead><tbody id="tbl-reprovados"></tbody></table></div>
+        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Cliente</th><th>Produto/Serviço</th><th>Valor</th><th>Reprovado em</th><th>Motivo</th><th>Observação</th><th>Ações</th></tr></thead><tbody id="tbl-reprovados"></tbody></table></div>
       </div>
     </div>
 
@@ -755,7 +770,7 @@ tr:hover td{background:#FAFBFD;}
     </div>
     <div class="form-grid" style="margin-bottom:14px;">
       <div class="form-group"><label>Cliente / Fornecedor *</label><select id="orc-cliente" style="width:100%;border:1.5px solid var(--cinza-border);border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;"></select></div>
-      <div class="form-group"><label>Produto *</label><select id="orc-produto" style="width:100%;border:1.5px solid var(--cinza-border);border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;"></select></div>
+      <div class="form-group"><label>Produto / Serviço *</label><select id="orc-produto" style="width:100%;border:1.5px solid var(--cinza-border);border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;"></select></div>
       <div class="form-group"><label>Subproduto</label><select id="orc-subproduto" style="width:100%;border:1.5px solid var(--cinza-border);border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;"><option value="">Nenhum</option></select></div>
       <div class="form-group"><label>Valor Total (R$) *</label><input type="number" id="orc-valor" placeholder="0,00"></div>
       <div class="form-group"><label>Data de Entrada *</label><input type="date" id="orc-dt-entrada"></div>
@@ -990,13 +1005,13 @@ document.getElementById('login-pass').addEventListener('keydown', e => { if(e.ke
 
 // ===== NAV =====
 const screenTitles = {
-  dashboard:'Dashboard', produtos:'Cadastro de Produtos', subprodutos:'Cadastro de Subprodutos',
+  dashboard:'Dashboard', produtos:'Cadastro de Produtos/Serviços', subprodutos:'Cadastro de Subprodutos/Serviços',
   clientes:'Cadastro de Clientes', motivos:'Motivos de Reprovação', orcamentos:'Lançamento de Orçamento',
   aguardando:'Aguardando Cliente', diretor:'Aguardando Diretor', instalacao:'Instalação', concluidos:'Projetos Concluídos',
   cobranca:'Cobrança', reprovados:'Orçamentos Reprovados', calendario:'Calendário de Instalações', admin:'Administração do Sistema', horario:'Horário de Trabalho', tecnicos:'Cadastro de Técnicos'
 };
 const screenActions = {
-  produtos: '<button class="btn btn-primary btn-sm" onclick="clearForm(\'prod\')">+ Novo Produto</button>',
+  produtos: '<button class="btn btn-primary btn-sm" onclick="clearForm(\'prod\')">+ Novo Produto/Serviço</button>',
   orcamentos: '<button class="btn btn-primary btn-sm" onclick="abrirModalNovoOrc()">＋ Novo Orçamento</button>',
   clientes: '<button class="btn btn-primary btn-sm" onclick="clearForm(\'cli\')">+ Novo Cliente</button>',
 };
@@ -1023,7 +1038,7 @@ function nav(screen) {
 function populateSelects() {
   // ano selects
   const anos = [2023,2024,2025,2026,2027];
-  ['dash-filter-ano','orc-filter-ano','ag-filter-ano','inst-filter-ano','con-filter-ano','cobr-filter-ano','rep-filter-ano'].forEach(id => {
+  ['dash-filter-ano','orc-filter-ano','ag-filter-ano','inst-filter-ano','con-filter-ano','cobr-filter-ano','rep-filter-ano','dir-filter-ano'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.innerHTML = '<option value="">Todos</option>' + anos.map(a => `<option>${a}</option>`).join('');
@@ -1435,8 +1450,60 @@ async function salvarFollowup() {
 }
 
 // ===== INSTALAÇÃO =====
+
+function limparFiltrosInst() {
+  ['inst-filter-tec','inst-filter-cli','inst-filter-prod','inst-filter-mes','inst-filter-ano','inst-filter-semana'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+  const dia = document.getElementById('inst-filter-dia'); if(dia) dia.value = '';
+  renderInstalacao();
+}
+
 function renderInstalacao() {
+  // Popular selects dinâmicos
+  const tecSel = document.getElementById('inst-filter-tec');
+  if (tecSel && db.tecnicos) {
+    const cur = tecSel.value;
+    tecSel.innerHTML = '<option value="">Todos</option>' + db.tecnicos.map(t=>`<option value="${t.id}" ${cur===t.id?'selected':''}>${t.nome}</option>`).join('');
+  }
+  const prodSel = document.getElementById('inst-filter-prod');
+  if (prodSel && db.produtos) {
+    const cur = prodSel.value;
+    prodSel.innerHTML = '<option value="">Todos</option>' + db.produtos.map(p=>`<option value="${p.id}" ${cur===p.id?'selected':''}>${p.nome}</option>`).join('');
+  }
+
   let list = db.orcamentos.filter(o => o.followup === 'Concluído' && o.statusInstalacao !== 'Concluído');
+
+  // Filtro técnico
+  const filtTec = document.getElementById('inst-filter-tec')?.value || '';
+  if (filtTec) list = list.filter(o => o.tecnicoId === filtTec);
+
+  // Filtro produto
+  const filtProd = document.getElementById('inst-filter-prod')?.value || '';
+  if (filtProd) list = list.filter(o => o.produtoId === filtProd);
+
+  // Filtro semana
+  const filtSemana = document.getElementById('inst-filter-semana')?.value;
+  if (filtSemana !== '' && filtSemana !== null && filtSemana !== undefined) {
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    const diaSemana = hoje.getDay();
+    const inicioSemana = new Date(hoje); inicioSemana.setDate(hoje.getDate() - diaSemana);
+    const offset = parseInt(filtSemana) * 7;
+    const ini = new Date(inicioSemana); ini.setDate(ini.getDate() + offset);
+    const fim = new Date(ini); fim.setDate(ini.getDate() + 6);
+    list = list.filter(o => {
+      const d = new Date(o.dtInstalacaoInicio || o.dtEntrada);
+      return d >= ini && d <= fim;
+    });
+  }
+
+  // Filtro dia
+  const filtDia = parseInt(document.getElementById('inst-filter-dia')?.value || '');
+  if (filtDia) list = list.filter(o => {
+    const d = o.dtInstalacaoInicio || o.dtEntrada;
+    return d && parseInt(d.split('-')[2]) === filtDia;
+  });
+
   list = filterOrc(list, 'inst');
   document.getElementById('tbl-instalacao').innerHTML = list.length ? list.map(o => {
     const cli = db.clientes.find(c => c.id === o.clienteId);
