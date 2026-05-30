@@ -340,6 +340,16 @@ tr:hover td{background:#FAFBFD;}
         <select id="dash-filter-ano" onchange="renderDashboard()"></select>
       </div>
       <div class="stats-grid" id="dash-stats"></div>
+
+      <!-- GRÁFICO DE FASES -->
+      <div style="background:#fff;border:1px solid var(--cinza-border);border-radius:14px;padding:20px 24px;margin:0 0 20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+          <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;color:var(--azul-escuro);">📊 Funil de Fases — Status Atual por Mês</div>
+          <div style="font-size:12px;color:var(--cinza-texto);">Filtrando pelo mês/ano selecionado no topo</div>
+        </div>
+        <div id="dash-fases-chart" style="overflow-x:auto;"></div>
+      </div>
+
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
         <div class="table-wrap">
           <div class="table-header"><h3>📅 Orçamentos por Mês (Valor Total)</h3></div>
@@ -2254,10 +2264,13 @@ function renderDashboard() {
   document.getElementById('dash-stats').innerHTML = `
     <div class="stat-card"><div class="sc-icon" style="background:var(--azul-bg)">📝</div><div class="sc-label">Total Orçamentos</div><div class="sc-value">${total}</div></div>
     <div class="stat-card"><div class="sc-icon" style="background:var(--verde-bg)">✅</div><div class="sc-label">Concluídos</div><div class="sc-value">${concluidos}</div></div>
-    <div class="stat-card"><div class="sc-icon" style="background:var(--laranja-bg)">📤</div><div class="sc-label">Aprovados</div><div class="sc-value">${aprovados}</div></div>
+    <div class="stat-card"><div class="sc-icon" style="background:var(--laranja-bg)">📤</div><div class="sc-label">Aprovados/Instalação</div><div class="sc-value">${aprovados}</div></div>
     <div class="stat-card"><div class="sc-icon" style="background:var(--vermelho-bg)">❌</div><div class="sc-label">Reprovados</div><div class="sc-value">${reprovados}</div></div>
     <div class="stat-card"><div class="sc-icon" style="background:var(--azul-bg)">🔄</div><div class="sc-label">Em Atendimento</div><div class="sc-value">${emAndamento}</div></div>
     <div class="stat-card"><div class="sc-icon" style="background:var(--verde-bg)">💰</div><div class="sc-label">Valor Concluídos</div><div class="sc-value" style="font-size:16px;">${fmtVal(valorConc)}</div></div>`;
+
+  // ===== GRÁFICO DE FASES =====
+  renderDashFases(all);
 
   // chart por mês
   const mesesData = meses.map((m,i) => {
@@ -2291,6 +2304,95 @@ function renderDashboard() {
     else if (o.status==='Enviado ao cliente') stBadge='<span class="badge badge-orange">Aguardando</span>';
     return `<tr><td><strong>ORC-${String(o._num).padStart(3,'0')}</strong></td><td>${cli?.nome||'-'}</td><td>${prod?.nome||'-'}</td><td>${fmtVal(o.valor)}</td><td>${stBadge}</td><td>${ltBadge(days)}</td></tr>`;
   }).join('') || '<tr><td colspan="6"><div class="empty-state"><p>Nenhum orçamento lançado</p></div></td></tr>';
+}
+
+
+function renderDashFases(all) {
+  const el = document.getElementById('dash-fases-chart');
+  if (!el) return;
+
+  // Identificar técnicos únicos da instalação
+  const tecs = db.tecnicos || [];
+
+  // Calcular fases para cada orçamento
+  function getFase(o) {
+    if (o.followup === 'Reprovado') return null; // ignorar reprovados
+    if (o.statusInstalacao === 'Concluído') {
+      const isPago = o.statusCobranca === 'Pago';
+      return isPago ? 'cobrado' : 'aguard_cobranca';
+    }
+    if (o.statusInterno === 'ativo') return 'manutencao';
+    if (o.followup === 'Concluído') {
+      // Em instalação — qual técnico?
+      if (!o.tecnicoId) return 'inst_sem_tec';
+      const tecIdx = tecs.findIndex(t => t.id === o.tecnicoId);
+      return `inst_tec_${tecIdx}`;
+    }
+    if (o.status === 'Dúvidas') return 'duvidas';
+    if (o.status === 'Enviado ao cliente') return 'aguard_cliente';
+    return 'orcamento'; // Não iniciado, Em andamento
+  }
+
+  // Definir fases na ordem do funil
+  const fasesDef = [
+    { key: 'orcamento',      label: '📝 Em Orçamento',         cor: '#1D4ED8', bg: '#DBEAFE' },
+    { key: 'duvidas',        label: '❓ Dúvidas (Diretor)',     cor: '#854D0E', bg: '#FEF9C3' },
+    { key: 'aguard_cliente', label: '⏳ Aguardando Cliente',    cor: '#B45309', bg: '#FEF3C7' },
+    ...tecs.map((t, i) => ({
+      key: `inst_tec_${i}`,
+      label: `🏗️ Instalação — ${t.nome}`,
+      cor: TEC_CORES[i % TEC_CORES.length].cor,
+      bg: TEC_CORES[i % TEC_CORES.length].bg
+    })),
+    { key: 'inst_sem_tec',   label: '🏗️ Instalação sem técnico', cor: '#6B7280', bg: '#F3F4F6' },
+    { key: 'manutencao',     label: '🔧 Manutenção Interna',   cor: '#7C3AED', bg: '#EDE9FE' },
+    { key: 'aguard_cobranca',label: '💰 Aguardando Cobrança',  cor: '#B91C1C', bg: '#FEE2E2' },
+    { key: 'cobrado',        label: '✅ Cobrado/Pago',          cor: '#15803D', bg: '#D1FAE5' },
+  ];
+
+  // Contar por fase
+  const contagem = {};
+  fasesDef.forEach(f => contagem[f.key] = 0);
+  all.forEach(o => {
+    const fase = getFase(o);
+    if (fase !== null && contagem[fase] !== undefined) contagem[fase]++;
+  });
+
+  const maxVal = Math.max(...Object.values(contagem), 1);
+  const total = all.filter(o => o.followup !== 'Reprovado').length || 1;
+
+  // Renderizar como barras horizontais
+  const barras = fasesDef.map(f => {
+    const qtd = contagem[f.key] || 0;
+    const pct = Math.round(qtd / maxVal * 100);
+    const pctTotal = Math.round(qtd / total * 100);
+    if (qtd === 0 && !['orcamento','aguard_cliente','cobrado'].includes(f.key)) return ''; // ocultar fases vazias (exceto as principais)
+    return `
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <div style="width:200px;min-width:200px;font-size:12px;font-weight:600;color:#374151;text-align:right;line-height:1.3;">${f.label}</div>
+        <div style="flex:1;background:#F1F5F9;border-radius:8px;height:28px;overflow:hidden;position:relative;">
+          <div style="width:${pct}%;background:${f.cor};height:100%;border-radius:8px;transition:.4s;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;min-width:${qtd>0?'32px':'0'};">
+            ${qtd > 0 ? `<span style="color:#fff;font-size:12px;font-weight:800;font-family:'Nunito',sans-serif;">${qtd}</span>` : ''}
+          </div>
+        </div>
+        <div style="width:60px;text-align:right;">
+          <span style="background:${f.bg};color:${f.cor};border-radius:20px;padding:2px 8px;font-size:11px;font-weight:700;">${pctTotal}%</span>
+        </div>
+      </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div style="max-width:900px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--cinza-border);">
+        <div style="width:200px;min-width:200px;"></div>
+        <div style="flex:1;font-size:11px;color:var(--cinza-texto);font-weight:600;">← Quantidade (barra) &nbsp;&nbsp; % do total →</div>
+        <div style="width:60px;font-size:11px;color:var(--cinza-texto);text-align:right;">% total</div>
+      </div>
+      ${barras}
+      <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--cinza-border);font-size:12px;color:var(--cinza-texto);">
+        Total considerado: <strong>${total}</strong> orçamento(s) &nbsp;|&nbsp; Reprovados excluídos do funil
+      </div>
+    </div>`;
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
