@@ -439,7 +439,7 @@ tr:hover td{background:#FAFBFD;}
         <label>Ano:</label>
         <select id="orc-filter-ano" onchange="renderOrcamentos()"></select>
         <label>Status:</label>
-        <select id="orc-filter-status" onchange="renderOrcamentos()"><option value="">Todos</option><option value="Não iniciado" selected>⚪ Não iniciado</option><option value="Em andamento">🔵 Em andamento</option><option value="Dúvidas">❓ Dúvidas</option><option value="Enviado ao cliente">📤 Enviado ao cliente</option></select>
+        <select id="orc-filter-status" onchange="renderOrcamentos()"><option value="" selected>Todos</option><option value="Não iniciado">⚪ Não iniciado</option><option value="Em andamento">🔵 Em andamento</option><option value="Dúvidas">❓ Dúvidas</option><option value="Enviado ao cliente">📤 Enviado ao cliente</option></select>
       </div>
       <div class="table-wrap">
         <div class="table-header">
@@ -1300,6 +1300,8 @@ function filterOrc(list, prefixo) {
 function renderOrcamentos() {
   const statusFilter = document.getElementById('orc-filter-status')?.value || '';
   let list = db.orcamentos.filter(o => !['Concluído','Reprovado','Instalação'].includes(o.followup) && o.status !== 'Enviado ao cliente' && o.status !== 'Reprovado' && o.status !== 'Dúvidas');
+  // Normaliza status vazio para 'Não iniciado'
+  list.forEach(o => { if (!o.status) o.status = 'Não iniciado'; });
   if (statusFilter) list = list.filter(o => o.status === statusFilter);
   list = filterOrc(list, 'orc');
   document.getElementById('tbl-orcamentos').innerHTML = list.length ? list.map(o => {
@@ -2952,6 +2954,8 @@ async function responderDiretor(id) {
   o.status = 'Em andamento';
   o.statusDir = null;
   o.dtDuvida = null;
+  // Garantir que followup não bloqueia a volta
+  if (!o.followup || o.followup === '') o.followup = '';
   await save();
   renderDiretor();
   renderOrcamentos();
