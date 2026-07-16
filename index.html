@@ -37,6 +37,12 @@ body{font-family:'Nunito Sans',sans-serif;background:var(--cinza-bg);color:var(-
 .sidebar-logo-text span{display:block;font-size:10px;font-weight:400;opacity:.6;margin-top:1px;}
 .sidebar-menu{padding:12px 0;flex:1;overflow-y:auto;}
 .menu-section{padding:8px 16px 4px;font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;}
+.menu-section.toggle{cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;transition:.15s;}
+.menu-section.toggle:hover{color:rgba(255,255,255,.7);}
+.menu-section-arrow{font-size:9px;transition:transform .2s ease;transform:rotate(0deg);}
+.menu-section-group.collapsed .menu-section-arrow{transform:rotate(-90deg);}
+.menu-section-items{max-height:600px;overflow:hidden;transition:max-height .25s ease;}
+.menu-section-group.collapsed .menu-section-items{max-height:0;}
 .menu-item{display:flex;align-items:center;gap:10px;padding:9px 16px;color:rgba(255,255,255,.75);font-size:13px;font-weight:500;cursor:pointer;border-left:3px solid transparent;transition:.15s;}
 .menu-item:hover{background:rgba(255,255,255,.08);color:#fff;}
 .menu-item.active{background:rgba(60,181,74,.18);color:var(--azul-claro);border-left-color:#3CB54A;}
@@ -273,25 +279,40 @@ tr:hover td{background:#FAFBFD;}
   <div class="sidebar-menu">
     <div class="menu-section">Principal</div>
     <div class="menu-item active" onclick="nav('dashboard')"><span class="mi">📊</span> Dashboard</div>
-    <div class="menu-section">Cadastros</div>
-    <div class="menu-item" onclick="nav('produtos')"><span class="mi">📦</span> Produtos/Serviços</div>
-    <div class="menu-item" onclick="nav('subprodutos')"><span class="mi">🔧</span> Subprodutos</div>
-    <div class="menu-item" onclick="nav('clientes')"><span class="mi">👥</span> Clientes</div>
-    <div class="menu-item" onclick="nav('motivos')"><span class="mi">📋</span> Motivos Reprovação</div>
-    <div class="menu-section">Orçamentos</div>
-    <div class="menu-item" onclick="nav('orcamentos')"><span class="mi">📝</span> Lançar Orçamento</div>
-    <div class="menu-item" onclick="nav('aguardando')"><span class="mi">⏳</span> Aguardando Cliente <span class="menu-badge" id="badge-aguardando">0</span></div>
-    <div class="menu-item" onclick="nav('diretor')"><span class="mi">🎯</span> Aguardando Diretor <span class="menu-badge" id="badge-diretor" style="display:none">0</span></div>
-    <div class="menu-section">Projetos</div>
-    <div class="menu-item" onclick="nav('instalacao')"><span class="mi">🏗️</span> Instalação</div>
-    <div class="menu-item" onclick="nav('interna')"><span class="mi">🔧</span> Atendimento Interno <span class="menu-badge" id="badge-interna" style="display:none">0</span></div>
-    <div class="menu-item" onclick="nav('calendario')"><span class="mi">📅</span> Calendário</div>
-    <div class="menu-item" onclick="nav('concluidos')"><span class="mi">✅</span> Concluídos</div>
-    <div class="menu-item" onclick="nav('cobranca')"><span class="mi">💰</span> Cobrança <span class="menu-badge" id="badge-cobranca" style="display:none">0</span></div>
-    <div class="menu-item" onclick="nav('reprovados')"><span class="mi">❌</span> Reprovados <span class="menu-badge red" id="badge-reprovados">0</span></div>
-    <div class="menu-item admin-only" onclick="nav('tecnicos')" id="menu-tecnicos" style="display:none;"><span class="mi">👷</span> Técnicos</div>
-    <div class="menu-item admin-only" onclick="nav('admin')" id="menu-admin" style="display:none;"><span class="mi">⚙️</span> Administração</div>
-    <div class="menu-item admin-only" onclick="nav('horario')" id="menu-horario" style="display:none;"><span class="mi">🕐</span> Horário de Trabalho</div>
+
+    <div class="menu-section-group" data-menu-group="cadastros">
+      <div class="menu-section toggle" onclick="toggleMenuSection(this)">Cadastros <span class="menu-section-arrow">▾</span></div>
+      <div class="menu-section-items">
+        <div class="menu-item" onclick="nav('produtos')"><span class="mi">📦</span> Produtos/Serviços</div>
+        <div class="menu-item" onclick="nav('subprodutos')"><span class="mi">🔧</span> Subprodutos</div>
+        <div class="menu-item" onclick="nav('clientes')"><span class="mi">👥</span> Clientes</div>
+        <div class="menu-item" onclick="nav('motivos')"><span class="mi">📋</span> Motivos Reprovação</div>
+      </div>
+    </div>
+
+    <div class="menu-section-group" data-menu-group="orcamentos">
+      <div class="menu-section toggle" onclick="toggleMenuSection(this)">Orçamentos <span class="menu-section-arrow">▾</span></div>
+      <div class="menu-section-items">
+        <div class="menu-item" onclick="nav('orcamentos')"><span class="mi">📝</span> Lançar Orçamento</div>
+        <div class="menu-item" onclick="nav('aguardando')"><span class="mi">⏳</span> Aguardando Cliente <span class="menu-badge" id="badge-aguardando">0</span></div>
+        <div class="menu-item" onclick="nav('diretor')"><span class="mi">🎯</span> Aguardando Diretor <span class="menu-badge" id="badge-diretor" style="display:none">0</span></div>
+      </div>
+    </div>
+
+    <div class="menu-section-group" data-menu-group="projetos">
+      <div class="menu-section toggle" onclick="toggleMenuSection(this)">Projetos <span class="menu-section-arrow">▾</span></div>
+      <div class="menu-section-items">
+        <div class="menu-item" onclick="nav('instalacao')"><span class="mi">🏗️</span> Instalação</div>
+        <div class="menu-item" onclick="nav('interna')"><span class="mi">🔧</span> Atendimento Interno <span class="menu-badge" id="badge-interna" style="display:none">0</span></div>
+        <div class="menu-item" onclick="nav('calendario')"><span class="mi">📅</span> Calendário</div>
+        <div class="menu-item" onclick="nav('concluidos')"><span class="mi">✅</span> Concluídos</div>
+        <div class="menu-item" onclick="nav('cobranca')"><span class="mi">💰</span> Cobrança <span class="menu-badge" id="badge-cobranca" style="display:none">0</span></div>
+        <div class="menu-item" onclick="nav('reprovados')"><span class="mi">❌</span> Reprovados <span class="menu-badge red" id="badge-reprovados">0</span></div>
+        <div class="menu-item admin-only" onclick="nav('tecnicos')" id="menu-tecnicos" style="display:none;"><span class="mi">👷</span> Técnicos</div>
+        <div class="menu-item admin-only" onclick="nav('admin')" id="menu-admin" style="display:none;"><span class="mi">⚙️</span> Administração</div>
+        <div class="menu-item admin-only" onclick="nav('horario')" id="menu-horario" style="display:none;"><span class="mi">🕐</span> Horário de Trabalho</div>
+      </div>
+    </div>
   </div>
   <div class="sidebar-user" style="flex-direction:column;align-items:flex-start;gap:8px;">
     <div style="display:flex;align-items:center;gap:10px;width:100%;">
@@ -1043,8 +1064,10 @@ let db = {
 };
 let orcCounter = 1;
 
-async function loadDB() {
-  showLoading(true);
+async function loadDB(silent = false) {
+  // 'silent' evita o overlay de carregamento em tela cheia — usado nas
+  // sincronizações automáticas em segundo plano para não "piscar" a tela.
+  if (!silent) showLoading(true);
   try {
     const rows = await supaGet('dados', 'id=eq.principal');
     if (rows && rows.length > 0) {
@@ -1062,9 +1085,9 @@ async function loadDB() {
     }
   } catch(e) {
     console.error('Erro loadDB:', e);
-    toast('Erro ao carregar dados. Verifique conexão.', 'error');
+    if (!silent) toast('Erro ao carregar dados. Verifique conexão.', 'error');
   }
-  showLoading(false);
+  if (!silent) showLoading(false);
 }
 async function save() {
   try {
@@ -1173,8 +1196,8 @@ async function doLogin() {
       atualizarInfoLogado();
       
       await loadDB(); populateSelects(); renderDashboard(); updateBadges(); updateBadgeCobranca(); initCalFiltros(); applyPerms();
-      // Sync automático a cada 30 segundos
-      setInterval(async () => { await loadDB(); updateBadges(); updateBadgeCobranca(); }, 30000);
+      // Sync automático a cada 30 segundos (silencioso, sem overlay de carregamento)
+      setInterval(async () => { await loadDB(true); updateBadges(); updateBadgeCobranca(); }, 30000);
     } else {
       errEl.style.display = 'block';
     }
@@ -1199,6 +1222,41 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
+// ===== MENU COLAPSÁVEL (submenus) =====
+function toggleMenuSection(headerEl) {
+  const group = headerEl.closest('.menu-section-group');
+  if (!group) return;
+  group.classList.toggle('collapsed');
+  salvarEstadoMenu();
+}
+function salvarEstadoMenu() {
+  const estado = {};
+  document.querySelectorAll('.menu-section-group').forEach(g => {
+    estado[g.dataset.menuGroup] = g.classList.contains('collapsed');
+  });
+  try { localStorage.setItem('menu_grupos_colapsados', JSON.stringify(estado)); } catch(e) {}
+}
+function restaurarEstadoMenu() {
+  let estado = {};
+  try { estado = JSON.parse(localStorage.getItem('menu_grupos_colapsados') || '{}'); } catch(e) {}
+  document.querySelectorAll('.menu-section-group').forEach(g => {
+    if (estado[g.dataset.menuGroup]) g.classList.add('collapsed');
+  });
+}
+function expandirGrupoDoItem(screen) {
+  // Garante que o grupo do item clicado fique visível/expandido
+  document.querySelectorAll('.menu-item[onclick]').forEach(el => {
+    if (el.getAttribute('onclick') && el.getAttribute('onclick').includes("'" + screen + "'")) {
+      const group = el.closest('.menu-section-group');
+      if (group && group.classList.contains('collapsed')) {
+        group.classList.remove('collapsed');
+        salvarEstadoMenu();
+      }
+    }
+  });
+}
+document.addEventListener('DOMContentLoaded', restaurarEstadoMenu);
+
 // ===== NAV =====
 const screenTitles = {
   dashboard:'Dashboard', produtos:'Cadastro de Produtos/Serviços', subprodutos:'Cadastro de Subprodutos/Serviços',
@@ -1219,6 +1277,7 @@ function nav(screen) {
   document.querySelectorAll('.menu-item').forEach(m => {
     if (m.getAttribute('onclick') && m.getAttribute('onclick').includes("'" + screen + "'")) m.classList.add('active');
   });
+  expandirGrupoDoItem(screen);
   document.getElementById('topbar-title').textContent = screenTitles[screen] || screen;
   document.getElementById('topbar-actions').innerHTML = screenActions[screen] || '';
   const renders = {
@@ -3916,7 +3975,7 @@ async function salvarTecnicoInst(orcId, tecId) {
 async function atualizarSistema() {
   const btn = document.getElementById('btn-atualizar');
   if (btn) { btn.textContent = '⏳ Atualizando...'; btn.disabled = true; }
-  await loadDB();
+  await loadDB(true);
   updateBadges(); updateBadgeCobranca(); updateBadgeDiretor();
   // Re-renderiza tela atual
   const tela = document.querySelector('.screen.active')?.id?.replace('screen-','');
