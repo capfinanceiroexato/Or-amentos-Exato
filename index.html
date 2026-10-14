@@ -352,7 +352,8 @@ tr:hover td{background:#F7FAFF;}
 .cod-erro{font-size:12px;color:#B91C1C;font-weight:700;margin-top:6px;display:none;}
 
 /* ===== Botão flutuante (FAB) ===== */
-#fab-wrap{position:fixed;right:28px;bottom:28px;z-index:900;display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
+#fab-wrap{position:fixed;right:28px;bottom:28px;z-index:900;display:flex;flex-direction:column;align-items:flex-end;gap:10px;pointer-events:none;}
+#fab-main{pointer-events:auto;}
 #fab-main{width:62px;height:62px;border-radius:50%;border:none;cursor:pointer;background:var(--grad-marca);color:#fff;font-size:32px;font-weight:300;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 28px rgba(31,143,87,.45),0 0 0 6px rgba(60,181,74,.14);transition:transform .25s cubic-bezier(.2,.9,.3,1.3),box-shadow .2s;}
 #fab-main:hover{box-shadow:0 16px 34px rgba(31,143,87,.55),0 0 0 8px rgba(60,181,74,.18);}
 #fab-wrap.open #fab-main{transform:rotate(45deg);background:var(--grad-azul);box-shadow:0 12px 28px rgba(27,58,107,.45);}
@@ -2024,6 +2025,10 @@ let db = {
   orcamentos: []
 };
 let orcCounter = 1;
+// Cópia do que veio do servidor na última leitura/gravação — base para mesclar alterações
+// de vários computadores sem que um apague o que o outro fez.
+let _dbBase = null;
+const _clone = v => JSON.parse(JSON.stringify(v ?? null));
 
 async function loadDB(silent = false) {
   // 'silent' evita o overlay de carregamento em tela cheia — usado nas
@@ -2033,6 +2038,7 @@ async function loadDB(silent = false) {
     const rows = await supaGet('dados', 'id=eq.principal');
     if (rows && rows.length > 0) {
       db = sanitizarTextos(rows[0].payload);
+      _dbBase = _clone(db);
       orcCounter = db.orcamentos && db.orcamentos.length > 0 ? Math.max(...db.orcamentos.map(o => o._num || 1)) + 1 : 1;
     } else {
       // Primeiro acesso: seed motivos padrão e salva
@@ -2043,6 +2049,7 @@ async function loadDB(silent = false) {
         {id: uid(), nome: 'Projeto cancelado', cat: 'Outro'},
       ];
       await supaPost('dados', {id: 'principal', payload: db});
+      _dbBase = _clone(db);
     }
   } catch(e) {
     console.error('Erro loadDB:', e);
@@ -2050,10 +2057,75 @@ async function loadDB(silent = false) {
   }
   if (!silent) showLoading(false);
 }
-async function save() {
+// Mescla em 3 vias: aplica sobre a versão atual do servidor apenas o que ESTE computador
+// alterou desde a última leitura (itens incluídos, editados ou excluídos, por id).
+function _mesclarLista(base, local, servidor) {
+  const temId = arr => Array.isArray(arr) && arr.every(x => x && typeof x === 'object' && x.id != null);
+  if (!temId(base) || !temId(local) || !temId(servidor)) {
+    return JSON.stringify(local) !== JSON.stringify(base) ? local : servidor;
+  }
+  const mB = new Map(base.map(x => [x.id, x]));
+  const mL = new Map(local.map(x => [x.id, x]));
+  const out = servidor.slice();
+  const idx = new Map(out.map((x, i) => [x.id, i]));
+  // excluídos aqui
+  const excluidos = new Set(base.filter(x => !mL.has(x.id)).map(x => x.id));
+  // incluídos ou editados aqui
+  local.forEach(x => {
+    const b = mB.get(x.id);
+    if (!b) { if (idx.has(x.id)) out[idx.get(x.id)] = x; else { out.push(x); idx.set(x.id, out.length - 1); } }
+    else if (JSON.stringify(b) !== JSON.stringify(x)) {
+      if (idx.has(x.id)) {
+        // mescla campo a campo: só os campos que mudaram aqui
+        const srv = out[idx.get(x.id)], novo = { ...srv };
+        new Set([...Object.keys(b), ...Object.keys(x)]).forEach(k => {
+          if (JSON.stringify(b[k]) !== JSON.stringify(x[k])) { if (k in x) novo[k] = x[k]; else delete novo[k]; }
+        });
+        out[idx.get(x.id)] = novo;
+      } // se outro computador excluiu, mantém excluído
+    }
+  });
+  return out.filter(x => !excluidos.has(x.id));
+}
+function _mesclarDB(base, local, servidor) {
+  const out = { ...servidor };
+  new Set([...Object.keys(base || {}), ...Object.keys(local)]).forEach(k => {
+    const b = base ? base[k] : undefined, l = local[k];
+    if (JSON.stringify(b) === JSON.stringify(l)) return; // não mudou aqui
+    if (Array.isArray(l)) out[k] = _mesclarLista(Array.isArray(b) ? b : [], l, Array.isArray(servidor[k]) ? servidor[k] : []);
+    else if (l === undefined) delete out[k];
+    else out[k] = l;
+  });
+  return out;
+}
+// Traz o resultado mesclado para o db local preservando os objetos já em uso pelas telas
+function _aplicarNoDB(novo) {
+  Object.keys(db).forEach(k => { if (!(k in novo)) delete db[k]; });
+  Object.keys(novo).forEach(k => {
+    const atual = db[k], v = novo[k];
+    if (Array.isArray(atual) && Array.isArray(v)) {
+      const porId = new Map(atual.filter(x => x && x.id != null).map(x => [x.id, x]));
+      const lista = v.map(x => {
+        const o = x && x.id != null ? porId.get(x.id) : null;
+        if (o && o !== x) { Object.keys(o).forEach(c => { if (!(c in x)) delete o[c]; }); Object.assign(o, x); return o; }
+        return x;
+      });
+      atual.length = 0; lista.forEach(x => atual.push(x));
+    } else db[k] = v;
+  });
+}
+async function save(opts = {}) {
   try {
     sanitizarTextos(db);
-    await supaPatch('dados', 'principal', {payload: db, updated_at: new Date().toISOString()});
+    let payload = db;
+    if (!opts.forcar && _dbBase) {
+      const rows = await supaGet('dados', 'id=eq.principal');
+      if (rows && rows.length) payload = _mesclarDB(_dbBase, db, sanitizarTextos(rows[0].payload));
+    }
+    await supaPatch('dados', 'principal', {payload, updated_at: new Date().toISOString()});
+    if (payload !== db) _aplicarNoDB(payload);
+    _dbBase = _clone(db);
+    if (db.orcamentos && db.orcamentos.length) orcCounter = Math.max(orcCounter, Math.max(...db.orcamentos.map(o => Number(o._num) || 1)) + 1);
     updateBadges();
   } catch(e) {
     console.error('Erro save:', e);
@@ -4638,7 +4710,7 @@ async function _restaurar(dados, extras, rotulo) {
   if (extras && document.getElementById('bkp-extras')?.checked) {
     Object.entries(extras).forEach(([k, v]) => { if (BKP_EXTRAS.includes(k)) try { localStorage.setItem(k, v); } catch(e) {} });
   }
-  await save();
+  await save({ forcar: true }); // restauração substitui tudo de propósito
   populateSelects(); updateBadges(); updateBadgeCobranca();
   toast('Backup restaurado com sucesso!', 'success');
   return true;
