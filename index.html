@@ -981,6 +981,20 @@ html[data-theme="dark"] .bkp-drop{border-color:#2B3A57;color:var(--txt2);}
 html[data-theme="dark"] .bkp-drop:hover{background:#0F2A1B;}
 html[data-theme="dark"] .bkp-alerta{background:#2E1418;border-color:#7F1D1D;color:#FCA5A5;}
 @media (max-width:1100px){.bkp-grid{grid-template-columns:1fr;}}
+/* ===== SELECT COM PESQUISA ===== */
+.ss-panel{position:fixed;z-index:20000;background:#fff;border:1.5px solid var(--cinza-border);border-radius:10px;box-shadow:0 14px 34px rgba(15,23,42,.22);display:none;flex-direction:column;overflow:hidden;font-family:inherit;}
+.ss-panel.open{display:flex;}
+.ss-search{margin:8px;padding:8px 11px;border:1.5px solid var(--cinza-border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;color:var(--texto);background:#fff;}
+.ss-search:focus{border-color:#3CB54A;box-shadow:0 0 0 3px rgba(60,181,74,.15);}
+.ss-list{overflow-y:auto;max-height:300px;padding:0 0 6px;}
+.ss-opt{padding:7px 13px;font-size:13px;cursor:pointer;color:var(--texto);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ss-opt.sel{font-weight:700;}
+.ss-opt.hl{background:#1A73E8;color:#fff;}
+.ss-empty{padding:10px 13px;font-size:12.5px;color:#94A3B8;font-style:italic;}
+html[data-theme="dark"] .ss-panel{background:var(--surf2);border-color:var(--cinza-border);}
+html[data-theme="dark"] .ss-search{background:var(--surf);color:var(--txt);border-color:var(--cinza-border);}
+html[data-theme="dark"] .ss-opt{color:var(--txt);}
+html[data-theme="dark"] .ss-opt.hl{background:#1A73E8;color:#fff;}
 </style>
 
   <!-- PWA -->
@@ -6896,6 +6910,103 @@ async function bkpPastaRender() {
 }
 setInterval(bkpVerificar, 60000);
 setTimeout(bkpVerificar, 15000);
+
+// ===== SELECT COM PESQUISA (Cliente / Produto) =====
+// Mantém o <select> original (valor, estilo e onchange intactos) e abre uma lista com campo de busca por digitação.
+const SS_IDS = [
+  'orc-cliente','orc-produto','edit-orc-cli','edit-orc-prod',
+  'dash-filter-cliente','orc-filter-cli','ag-filter-cli','inst-filter-cli','dir-filter-cli',
+  'int-filter-cli','con-filter-cli','cobr-filter-cli','rep-filter-cli','ns-filter-cli',
+  'inst-filter-prod','cls-cliente','sub-produto-pai'
+];
+const _ss = { panel: null, input: null, list: null, sel: null, itens: [], hl: -1 };
+function _ssNorm(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+function _ssBuild() {
+  if (_ss.panel) return;
+  const p = document.createElement('div'); p.className = 'ss-panel';
+  p.innerHTML = '<input type="text" class="ss-search" placeholder="🔍 Digite para pesquisar..." autocomplete="off"><div class="ss-list"></div>';
+  document.body.appendChild(p);
+  _ss.panel = p; _ss.input = p.querySelector('.ss-search'); _ss.list = p.querySelector('.ss-list');
+  _ss.input.addEventListener('input', _ssRender);
+  _ss.input.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); _ssMove(1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); _ssMove(-1); }
+    else if (e.key === 'Enter') { e.preventDefault(); const it = _ss.itens[_ss.hl]; if (it) _ssPick(it.value); }
+    else if (e.key === 'Escape' || e.key === 'Tab') { _ssClose(true); }
+  });
+  _ss.list.addEventListener('mousedown', e => e.preventDefault());
+  _ss.list.addEventListener('click', e => { const el = e.target.closest('.ss-opt'); if (el) _ssPick(el.dataset.v); });
+  document.addEventListener('mousedown', e => { if (_ss.sel && !_ss.panel.contains(e.target) && e.target !== _ss.sel) _ssClose(); }, true);
+  window.addEventListener('resize', () => _ssClose());
+  document.addEventListener('scroll', e => { if (_ss.sel && !_ss.panel.contains(e.target)) _ssPos(); }, true);
+}
+function _ssPos() {
+  const r = _ss.sel.getBoundingClientRect(), p = _ss.panel;
+  const w = Math.min(Math.max(r.width, 280), window.innerWidth - 16);
+  let left = Math.min(r.left, window.innerWidth - w - 8); if (left < 8) left = 8;
+  p.style.width = w + 'px'; p.style.left = left + 'px';
+  const abaixo = window.innerHeight - r.bottom - 10, acima = r.top - 10;
+  const h = Math.min(370, Math.max(abaixo, acima));
+  _ss.list.style.maxHeight = Math.max(120, h - 60) + 'px';
+  if (abaixo >= 220 || abaixo >= acima) { p.style.top = (r.bottom + 4) + 'px'; p.style.bottom = 'auto'; }
+  else { p.style.top = 'auto'; p.style.bottom = (window.innerHeight - r.top + 4) + 'px'; }
+}
+function _ssRender() {
+  const q = _ssNorm(_ss.input.value).trim();
+  const ops = [..._ss.sel.options].filter(o => !o.disabled && !o.hidden);
+  _ss.itens = ops.filter(o => !q || _ssNorm(o.text).includes(q)).map(o => ({ value: o.value, text: o.text }));
+  const cur = _ss.sel.value;
+  _ss.hl = Math.max(0, _ss.itens.findIndex(i => i.value === cur));
+  if (q) _ss.hl = 0;
+  _ss.list.innerHTML = _ss.itens.length
+    ? _ss.itens.map((it, i) => `<div class="ss-opt${it.value === cur ? ' sel' : ''}${i === _ss.hl ? ' hl' : ''}" data-v="${String(it.value).replace(/"/g, '&quot;')}" data-i="${i}">${escHtml(it.text)}</div>`).join('')
+    : '<div class="ss-empty">Nenhum resultado encontrado</div>';
+  _ssScrollHl();
+}
+function _ssMove(d) {
+  if (!_ss.itens.length) return;
+  _ss.hl = (_ss.hl + d + _ss.itens.length) % _ss.itens.length;
+  _ss.list.querySelectorAll('.ss-opt').forEach((el, i) => el.classList.toggle('hl', i === _ss.hl));
+  _ssScrollHl();
+}
+function _ssScrollHl() { const el = _ss.list.querySelector('.ss-opt.hl'); if (el) el.scrollIntoView({ block: 'nearest' }); }
+function _ssOpen(sel, inicial) {
+  if (sel.disabled) return;
+  _ssBuild();
+  if (_ss.sel === sel) { _ssClose(true); return; }
+  _ss.sel = sel;
+  _ss.input.value = inicial || '';
+  _ss.panel.classList.add('open');
+  _ssPos(); _ssRender();
+  setTimeout(() => { _ss.input.focus(); const n = _ss.input.value.length; _ss.input.setSelectionRange(n, n); }, 0);
+}
+function _ssClose(refocar) {
+  if (!_ss.panel) return;
+  const s = _ss.sel; _ss.sel = null;
+  _ss.panel.classList.remove('open');
+  if (refocar && s) s.focus();
+}
+function _ssPick(v) {
+  const s = _ss.sel; if (!s) return;
+  const mudou = s.value !== v;
+  s.value = v;
+  _ssClose(true);
+  if (mudou) s.dispatchEvent(new Event('change', { bubbles: true }));
+}
+function ssAplicar(sel) {
+  if (!sel || sel.dataset.ss) return;
+  sel.dataset.ss = '1';
+  const abrir = e => { e.preventDefault(); sel.focus(); _ssOpen(sel); };
+  sel.addEventListener('mousedown', e => { if (e.button === 0) abrir(e); });
+  sel.addEventListener('touchstart', abrir, { passive: false });
+  sel.addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (['Enter', ' ', 'ArrowDown', 'ArrowUp', 'F4'].includes(e.key)) { e.preventDefault(); _ssOpen(sel); }
+    else if (e.key.length === 1) { e.preventDefault(); _ssOpen(sel, e.key); }
+  });
+}
+function ssAplicarTodos() { SS_IDS.forEach(id => ssAplicar(document.getElementById(id))); }
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ssAplicarTodos); else ssAplicarTodos();
 </script>
 </body>
 </html>
